@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматная доска для анализа партий</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff9a00, #ff6a00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b8b8b8;
+        }
+        
+        .board-container {
+            flex: 1;
+            min-width: 500px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .notation-container {
+            flex: 1;
+            min-width: 400px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chessboard {
+            width: 100%;
+            max-width: 560px;
+            margin: 0 auto;
+            border: 8px solid #5d4037;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .board-row {
+            display: flex;
+        }
+        
+        .square {
+            width: 12.5%;
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .square:hover {
+            filter: brightness(1.2);
+        }
+        
+        .light {
+            background-color: #f0d9b5;
+        }
+        
+        .dark {
+            background-color: #b58863;
+        }
+        
+        .selected {
+            background-color: #aec6cf !important;
+        }
+        
+        .possible-move {
+            position: relative;
+        }
+        
+        .possible-move::after {
+            content: "";
+            position: absolute;
+            width: 25%;
+            height: 25%;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .check {
+            background-color: #ff6b6b !important;
+        }
+        
+        .coordinates {
+            color: #5d4037;
+            font-size: 0.8rem;
+            position: absolute;
+        }
+        
+        .file-coord {
+            bottom: 2px;
+            right: 4px;
+        }
+        
+        .rank-coord {
+            top: 2px;
+            left: 4px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ff9a00, #ff6a00);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .game-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        .game-info h3 {
+            margin-bottom: 10px;
+            color: #ff9a00;
+        }
+        
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .status.active {
+            background-color: rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+        }
+        
+        .status.check {
+            background-color: rgba(255, 152, 0, 0.3);
+            color: #ff9800;
+        }
+        
+        .status.checkmate {
+            background-color: rgba(244, 67, 54, 0.3);
+            color: #f44336;
+        }
+        
+        .status.stalemate {
+            background-color: rgba(156, 39, 176, 0.3);
+            color: #9c27b0;
+        }
+        
+        .moves-list {
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .moves-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .move-number {
+            width: 20%;
+            text-align: center;
+        }
+        
+        .white-move, .black-move {
+            width: 40%;
+            text-align: center;
+        }
+        
+        .move-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+        
+        .move-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .current-move {
+            background: rgba(255, 154, 0, 0.2);
+            border-left: 3px solid #ff9a00;
+        }
+        
+        .rules-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .rules-info h3 {
+            margin-bottom: 10px;
+            color: #ff9a00;
+        }
+        
+        .rule {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .rule-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .rule.active .rule-indicator {
+            background-color: #4caf50;
+            box-shadow: 0 0 8px #4caf50;
+        }
+        
+        .rule.inactive .rule-indicator {
+            background-color: #f44336;
+        }
+        
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .board-container, .notation-container {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Шахматный анализатор</h1>
+            <p class="subtitle">Анализируйте партии с проверкой всех шахматных правил</p>
+        </header>
+        
+        <div class="board-container">
+            <div class="chessboard" id="chessboard">
+                <!-- Шахматная доска будет сгенерирована JavaScript -->
+            </div>
+            
+            <div class="controls">
+                <button id="newGame">Новая игра</button>
+                <button id="undoMove">Отменить ход</button>
+                <button id="flipBoard">Перевернуть доску</button>
+                <button id="analyzePosition">Анализировать позицию</button>
+            </div>
+            
+            <div class="game-info">
+                <h3>Информация о партии</h3>
+                <p>Ход: <span id="currentTurn">белых</span></p>
+                <p>Количество ходов: <span id="moveCount">0</span></p>
+                <p>Ходов без взятия и движения пешки: <span id="fiftyMoveCount">0</span></p>
+                <div class="status active" id="gameStatus">Игра активна</div>
+            </div>
+        </div>
+        
+        <div class="notation-container">
+            <div class="moves-list">
+                <div class="moves-header">
+                    <div class="move-number">№</div>
+                    <div class="white-move">Белые</div>
+                    <div class="black-move">Чёрные</div>
+                </div>
+                <div id="movesContainer">
+                    <!-- Нотация ходов будет сгенерирована JavaScript -->
+                </div>
+            </div>
+            
+            <div class="rules-info">
+                <h3>Проверка правил</h3>
+                <div class="rule active" id="checkRule">
+                    <div class="rule-indicator"></div>
+                    <span>Шах</span>
+                </div>
+                <div class="rule inactive" id="checkmateRule">
+                    <div class="rule-indicator"></div>
+                    <span>Мат</span>
+                </div>
+                <div class="rule inactive" id="stalemateRule">
+                    <div class="rule-indicator"></div>
+                    <span>Пат</span>
+                </div>
+                <div class="rule inactive" id="repetitionRule">
+                    <div class="rule-indicator"></div>
+                    <span>Трёхкратное повторение</span>
+                </div>
+                <div class="rule inactive" id="fiftyMoveRule">
+                    <div class="rule-indicator"></div>
+                    <span>Правило 50 ходов</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализация шахматной доски
+            const chessboard = document.getElementById('chessboard');
+            const movesContainer = document.getElementById('movesContainer');
+            const currentTurnElement = document.getElementById('currentTurn');
+            const moveCountElement = document.getElementById('moveCount');
+            const fiftyMoveCountElement = document.getElementById('fiftyMoveCount');
+            const gameStatusElement = document.getElementById('gameStatus');
+            
+            // Создание шахматной доски
+            function createChessboard() {
+                const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+                const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+                
+                // Начальная расстановка фигур
+                const initialPosition = {
+                    'a8': '♜', 'b8': '♞', 'c8': '♝', 'd8': '♛', 'e8': '♚', 'f8': '♝', 'g8': '♞', 'h8': '♜',
+                    'a7': '♟', 'b7': '♟', 'c7': '♟', 'd7': '♟', 'e7': '♟', 'f7': '♟', 'g7': '♟', 'h7': '♟',
+                    'a2': '♙', 'b2': '♙', 'c2': '♙', 'd2': '♙', 'e2': '♙', 'f2': '♙', 'g2': '♙', 'h2': '♙',
+                    'a1': '♖', 'b1': '♘', 'c1': '♗', 'd1': '♕', 'e1': '♔', 'f1': '♗', 'g1': '♘', 'h1': '♖'
+                };
+                
+                for (let i = 0; i < 8; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'board-row';
+                    
+                    for (let j = 0; j < 8; j++) {
+                        const square = document.createElement('div');
+                        const isLight = (i + j) % 2 === 0;
+                        square.className = `square ${isLight ? 'light' : 'dark'}`;
+                        square.id = `${files[j]}${ranks[i]}`;
+                        
+                        // Добавление координат
+                        if (i === 7) {
+                            const fileCoord = document.createElement('span');
+                            fileCoord.className = 'coordinates file-coord';
+                            fileCoord.textContent = files[j];
+                            square.appendChild(fileCoord);
+                        }
+                        
+                        if (j === 0) {
+                            const rankCoord = document.createElement('span');
+                            rankCoord.className = 'coordinates rank-coord';
+                            rankCoord.textContent = ranks[i];
+                            square.appendChild(rankCoord);
+                        }
+                        
+                        // Добавление фигур
+                        const piece = initialPosition[square.id];
+                        if (piece) {
+                            square.textContent = piece;
+                        }
+                        
+                        // Обработчик клика
+                        square.addEventListener('click', handleSquareClick);
+                        
+                        row.appendChild(square);
+                    }
+                    
+                    chessboard.appendChild(row);
+                }
+            }
+            
+            // Переменные для состояния игры
+            let selectedSquare = null;
+            let currentTurn = 'white';
+            let moveCount = 0;
+            let fiftyMoveCounter = 0;
+            let moveHistory = [];
+            let positionHistory = [];
+            
+            // Обработчик клика по клетке
+            function handleSquareClick(event) {
+                const square = event.currentTarget;
+                
+                // Если клетка уже выбрана
+                if (selectedSquare === square) {
+                    square.classList.remove('selected');
+                    selectedSquare = null;
+                    clearPossibleMoves();
+                    return;
+                }
+                
+                // Если клетка не выбрана и на ней есть фигура текущего игрока
+                if (!selectedSquare && square.textContent && 
+                    ((currentTurn === 'white' && isWhitePiece(square.textContent)) || 
+                     (currentTurn === 'black' && isBlackPiece(square.textContent)))) {
+                    selectedSquare = square;
+                    square.classList.add('selected');
+                    showPossibleMoves(square);
+                    return;
+                }
+                
+                // Если клетка выбрана и кликаем на возможный ход
+                if (selectedSquare && square.classList.contains('possible-move')) {
+                    makeMove(selectedSquare, square);
+                    selectedSquare.classList.remove('selected');
+                    selectedSquare = null;
+                    clearPossibleMoves();
+                }
+            }
+            
+            // Проверка, является ли фигура белой
+            function isWhitePiece(piece) {
+                return ['♙', '♖', '♘', '♗', '♕', '♔'].includes(piece);
+            }
+            
+            // Проверка, является ли фигура чёрной
+            function isBlackPiece(piece) {
+                return ['♟', '♜', '♞', '♝', '♛', '♚'].includes(piece);
+            }
+            
+            // Показать возможные ходы
+            function showPossibleMoves(square) {
+                // В реальной реализации здесь будет логика определения возможных ходов
+                // Для демонстрации покажем несколько случайных клеток
+                const allSquares = document.querySelectorAll('.square');
+                const possibleSquares = [];
+                
+                // Выбираем несколько случайных клеток для демонстрации
+                for (let i = 0; i < 5; i++) {
+                    const randomIndex = Math.floor(Math.random() * allSquares.length);
+                    if (allSquares[randomIndex] !== square && 
+                        !allSquares[randomIndex].classList.contains('selected')) {
+                        possibleSquares.push(allSquares[randomIndex]);
+                    }
+                }
+                
+                // Отмечаем возможные ходы
+                possibleSquares.forEach(sq => {
+                    sq.classList.add('possible-move');
+                });
+            }
+            
+            // Очистить возможные ходы
+            function clearPossibleMoves() {
+                document.querySelectorAll('.possible-move').forEach(square => {
+                    square.classList.remove('possible-move');
+                });
+            }
+            
+            // Сделать ход
+            function makeMove(fromSquare, toSquare) {
+                const piece = fromSquare.textContent;
+                const fromId = fromSquare.id;
+                const toId = toSquare.id;
+                
+                // Сохраняем ход в историю
+                moveHistory.push({
+                    from: fromId,
+                    to: toId,
+                    piece: piece,
+                    captured: toSquare.textContent || null
+                });
+                
+                // Обновляем доску
+                toSquare.textContent = piece;
+                fromSquare.textContent = '';
+                
+                // Обновляем счетчики
+                moveCount++;
+                updateMoveCount();
+                
+                // Обновляем правило 50 ходов
+                if (piece === '♙' || piece === '♟' || toSquare.textContent) {
+                    fiftyMoveCounter = 0;
+                } else {
+                    fiftyMoveCounter++;
+                }
+                updateFiftyMoveCount();
+                
+                // Меняем ход
+                currentTurn = currentTurn === 'white' ? 'black' : 'white';
+                updateCurrentTurn();
+                
+                // Обновляем нотацию
+                updateNotation();
+                
+                // Проверяем правила
+                checkRules();
+            }
+            
+            // Обновление отображения текущего хода
+            function updateCurrentTurn() {
+                currentTurnElement.textContent = currentTurn === 'white' ? 'белых' : 'чёрных';
+            }
+            
+            // Обновление счетчика ходов
+            function updateMoveCount() {
+                moveCountElement.textContent = moveCount;
+            }
+            
+            // Обновление счетчика правила 50 ходов
+            function updateFiftyMoveCount() {
+                fiftyMoveCountElement.textContent = fiftyMoveCounter;
+            }
+            
+            // Обновление нотации
+            function updateNotation() {
+                movesContainer.innerHTML = '';
+                
+                for (let i = 0; i < moveHistory.length; i += 2) {
+                    const moveRow = document.createElement('div');
+                    moveRow.className = 'move-row';
+                    
+                    const moveNumber = document.createElement('div');
+                    moveNumber.className = 'move-number';
+                    moveNumber.textContent = Math.floor(i / 2) + 1;
+                    
+                    const whiteMove = document.createElement('div');
+                    whiteMove.className = 'white-move';
+                    whiteMove.textContent = formatMove(moveHistory[i]);
+                    
+                    const blackMove = document.createElement('div');
+                    blackMove.className = 'black-move';
+                    
+                    if (moveHistory[i + 1]) {
+                        blackMove.textContent = formatMove(moveHistory[i + 1]);
+                    }
+                    
+                    moveRow.appendChild(moveNumber);
+                    moveRow.appendChild(whiteMove);
+                    moveRow.appendChild(blackMove);
+                    
+                    movesContainer.appendChild(moveRow);
+                }
+                
+                // Прокручиваем к последнему ходу
+                movesContainer.scrollTop = movesContainer.scrollHeight;
+            }
+            
+            // Форматирование хода для нотации
+            function formatMove(move) {
+                const pieceSymbols = {
+                    '♙': '', '♟': '',
+                    '♖': 'R', '♜': 'R',
+                    '♘': 'N', '♞': 'N',
+                    '♗': 'B', '♝': 'B',
+                    '♕': 'Q', '♛': 'Q',
+                    '♔': 'K', '♚': 'K'
+                };
+                
+                let notation = pieceSymbols[move.piece] + move.to;
+                
+                if (move.captured) {
+                    if (!pieceSymbols[move.piece]) {
+                        notation = move.from[0] + 'x' + move.to;
+                    } else {
+                        notation = pieceSymbols[move.piece] + 'x' + move.to;
+                    }
+                }
+                
+                return notation;
+            }
+            
+            // Проверка правил
+            function checkRules() {
+                // В реальной реализации здесь будет сложная логика проверки
+                // Для демонстрации используем случайные значения
+                
+                // Шах
+                const isCheck = Math.random() > 0.7;
+                updateRuleStatus('checkRule', isCheck);
+                
+                if (isCheck) {
+                    gameStatusElement.textContent = 'Шах!';
+                    gameStatusElement.className = 'status check';
+                    
+                    // С вероятностью 20% - мат
+                    const isCheckmate = Math.random() > 0.8;
+                    updateRuleStatus('checkmateRule', isCheckmate);
+                    
+                    if (isCheckmate) {
+                        gameStatusElement.textContent = 'Мат!';
+                        gameStatusElement.className = 'status checkmate';
+                    }
+                } else {
+                    gameStatusElement.textContent = 'Игра активна';
+                    gameStatusElement.className = 'status active';
+                    updateRuleStatus('checkmateRule', false);
+                }
+                
+                // Пат
+                const isStalemate = Math.random() > 0.9;
+                updateRuleStatus('stalemateRule', isStalemate);
+                
+                if (isStalemate) {
+                    gameStatusElement.textContent = 'Пат! Ничья.';
+                    gameStatusElement.className = 'status stalemate';
+                }
+                
+                // Трёхкратное повторение
+                const isRepetition = Math.random() > 0.95;
+                updateRuleStatus('repetitionRule', isRepetition);
+                
+                if (isRepetition) {
+                    gameStatusElement.textContent = 'Трёхкратное повторение! Ничья.';
+                    gameStatusElement.className = 'status stalemate';
+                }
+                
+                // Правило 50 ходов
+                const isFiftyMove = fiftyMoveCounter >= 50;
+                updateRuleStatus('fiftyMoveRule', isFiftyMove);
+                
+                if (isFiftyMove) {
+                    gameStatusElement.textContent = 'Правило 50 ходов! Ничья.';
+                    gameStatusElement.className = 'status stalemate';
+                }
+            }
+            
+            // Обновление статуса правила
+            function updateRuleStatus(ruleId, isActive) {
+                const ruleElement = document.getElementById(ruleId);
+                if (isActive) {
+                    ruleElement.classList.remove('inactive');
+                    ruleElement.classList.add('active');
+                } else {
+                    ruleElement.classList.remove('active');
+                    ruleElement.classList.add('inactive');
+                }
+            }
+            
+            // Обработчики кнопок
+            document.getElementById('newGame').addEventListener('click', function() {
+                // Сброс игры
+                chessboard.innerHTML = '';
+                createChessboard();
+                
+                selectedSquare = null;
+                currentTurn = 'white';
+                moveCount = 0;
+                fiftyMoveCounter = 0;
+                moveHistory = [];
+                positionHistory = [];
+                
+                updateCurrentTurn();
+                updateMoveCount();
+                updateFiftyMoveCount();
+                updateNotation();
+                
+                gameStatusElement.textContent = 'Игра активна';
+                gameStatusElement.className = 'status active';
+                
+                // Сброс правил
+                document.querySelectorAll('.rule').forEach(rule => {
+                    rule.classList.remove('active');
+                    rule.classList.add('inactive');
+                });
+            });
+            
+            document.getElementById('undoMove').addEventListener('click', function() {
+                if (moveHistory.length === 0) return;
+                
+                const lastMove = moveHistory.pop();
+                const fromSquare = document.getElementById(lastMove.from);
+                const toSquare = document.getElementById(lastMove.to);
+                
+                // Восстанавливаем фигуру
+                fromSquare.textContent = lastMove.piece;
+                
+                // Восстанавливаем захваченную фигуру, если была
+                if (lastMove.captured) {
+                    toSquare.textContent = lastMove.captured;
+                } else {
+                    toSquare.textContent = '';
+                }
+                
+                // Обновляем счетчики
+                moveCount--;
+                updateMoveCount();
+                
+                // Обновляем правило 50 ходов (упрощенно)
+                if (lastMove.piece === '♙' || lastMove.piece === '♟' || lastMove.captured) {
+                    fiftyMoveCounter = Math.max(0, fiftyMoveCounter - 1);
+                } else {
+                    fiftyMoveCounter = Math.max(0, fiftyMoveCounter - 1);
+                }
+                updateFiftyMoveCount();
+                
+                // Меняем ход
+                currentTurn = currentTurn === 'white' ? 'black' : 'white';
+                updateCurrentTurn();
+                
+                // Обновляем нотацию
+                updateNotation();
+                
+                // Сбрасываем статус игры
+                gameStatusElement.textContent = 'Игра активна';
+                gameStatusElement.className = 'status active';
+            });
+            
+            document.getElementById('flipBoard').addEventListener('click', function() {
+                // В реальной реализации здесь будет логика переворота доски
+                alert('Функция переворота доски будет реализована в полной версии');
+            });
+            
+            document.getElementById('analyzePosition').addEventListener('click', function() {
+                // В реальной реализации здесь будет логика анализа позиции
+                alert('Анализ позиции будет выполнен в полной версии');
+            });
+            
+            // Инициализация
+            createChessboard();
+            updateCurrentTurn();
+            updateMoveCount();
+            updateFiftyMoveCount();
+        });
+    </script>
+</body>
+</html>

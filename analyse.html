@@ -80,7 +80,6 @@
             border: 8px solid #5d4037;
             border-radius: 5px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            position: relative;
         }
         
         .board-row {
@@ -500,9 +499,6 @@
                         // Обработчики событий
                         square.addEventListener('click', handleSquareClick);
                         square.addEventListener('mousedown', handleDragStart);
-                        square.addEventListener('mouseup', handleDragEnd);
-                        square.addEventListener('mouseenter', handleDragOver);
-                        square.addEventListener('mouseleave', handleDragLeave);
                         
                         row.appendChild(square);
                     }
@@ -624,23 +620,6 @@
                 }
             }
             
-            // Наведение на клетку при перетаскивании
-            function handleDragOver(event) {
-                if (selectedSquare && dragGhost) {
-                    const square = event.currentTarget;
-                    if (square.classList.contains('possible-move')) {
-                        square.style.backgroundColor = 'rgba(174, 198, 207, 0.7)';
-                    }
-                }
-            }
-            
-            // Уход с клетки при перетаскивании
-            function handleDragLeave(event) {
-                const square = event.currentTarget;
-                const isLight = square.classList.contains('light');
-                square.style.backgroundColor = isLight ? '#f0d9b5' : '#b58863';
-            }
-            
             // Прокрутка колесиком мыши
             function handleWheelScroll(event) {
                 event.preventDefault();
@@ -660,6 +639,11 @@
                     currentMoveIndex--;
                     updateBoardToMove(currentMoveIndex);
                     isViewingHistory = true;
+                    updateViewMoveIndicator();
+                } else if (currentMoveIndex === 0) {
+                    currentMoveIndex = -1;
+                    resetBoardToInitial();
+                    isViewingHistory = false;
                     updateViewMoveIndicator();
                 }
             }
@@ -688,10 +672,12 @@
                     const fromSquare = document.getElementById(move.from);
                     const toSquare = document.getElementById(move.to);
                     
-                    toSquare.textContent = move.piece;
-                    toSquare.style.color = fromSquare.style.color;
-                    toSquare.style.textShadow = fromSquare.style.textShadow;
-                    fromSquare.textContent = '';
+                    if (fromSquare && toSquare) {
+                        toSquare.textContent = move.piece;
+                        toSquare.style.color = fromSquare.style.color;
+                        toSquare.style.textShadow = fromSquare.style.textShadow;
+                        fromSquare.textContent = '';
+                    }
                 }
                 
                 // Обновляем текущий ход
@@ -811,14 +797,16 @@
                         let nextRank = rank + direction;
                         if (nextRank >= 1 && nextRank <= 8) {
                             const forwardMove = file + nextRank;
-                            if (!document.getElementById(forwardMove).textContent) {
+                            const forwardSquare = document.getElementById(forwardMove);
+                            if (forwardSquare && !forwardSquare.textContent) {
                                 moves.push(forwardMove);
                                 
                                 // Ход на 2 клетки из начальной позиции
                                 if ((color === 'white' && rank === 2) || (color === 'black' && rank === 7)) {
                                     nextRank = rank + 2 * direction;
                                     const doubleMove = file + nextRank;
-                                    if (!document.getElementById(doubleMove).textContent) {
+                                    const doubleSquare = document.getElementById(doubleMove);
+                                    if (doubleSquare && !doubleSquare.textContent) {
                                         moves.push(doubleMove);
                                     }
                                 }
@@ -836,7 +824,7 @@
                                 const captureRank = rank + direction;
                                 if (captureRank >= 1 && captureRank <= 8) {
                                     const captureSquare = document.getElementById(captureFile + captureRank);
-                                    if (captureSquare.textContent && 
+                                    if (captureSquare && captureSquare.textContent && 
                                         ((color === 'white' && isBlackPiece(captureSquare.textContent)) || 
                                          (color === 'black' && isWhitePiece(captureSquare.textContent)))) {
                                         moves.push(captureFile + captureRank);
@@ -861,9 +849,9 @@
                             
                             if (newFile >= 'a' && newFile <= 'h' && newRank >= 1 && newRank <= 8) {
                                 const targetSquare = document.getElementById(newFile + newRank);
-                                if (!targetSquare.textContent || 
+                                if (targetSquare && (!targetSquare.textContent || 
                                     (color === 'white' && isBlackPiece(targetSquare.textContent)) || 
-                                    (color === 'black' && isWhitePiece(targetSquare.textContent))) {
+                                    (color === 'black' && isWhitePiece(targetSquare.textContent)))) {
                                     moves.push(newFile + newRank);
                                 }
                             }
@@ -897,9 +885,9 @@
                                 
                                 if (newFile >= 'a' && newFile <= 'h' && newRank >= 1 && newRank <= 8) {
                                     const targetSquare = document.getElementById(newFile + newRank);
-                                    if (!targetSquare.textContent || 
+                                    if (targetSquare && (!targetSquare.textContent || 
                                         (color === 'white' && isBlackPiece(targetSquare.textContent)) || 
-                                        (color === 'black' && isWhitePiece(targetSquare.textContent))) {
+                                        (color === 'black' && isWhitePiece(targetSquare.textContent)))) {
                                         moves.push(newFile + newRank);
                                     }
                                 }
@@ -929,6 +917,8 @@
                         if (newFile < 'a' || newFile > 'h' || newRank < 1 || newRank > 8) break;
                         
                         const targetSquare = document.getElementById(newFile + newRank);
+                        if (!targetSquare) break;
+                        
                         if (!targetSquare.textContent) {
                             moves.push(newFile + newRank);
                         } else {
@@ -960,6 +950,8 @@
                         if (newFile < 'a' || newFile > 'h' || newRank < 1 || newRank > 8) break;
                         
                         const targetSquare = document.getElementById(newFile + newRank);
+                        if (!targetSquare) break;
+                        
                         if (!targetSquare.textContent) {
                             moves.push(newFile + newRank);
                         } else {
@@ -977,8 +969,22 @@
             function clearPossibleMoves() {
                 document.querySelectorAll('.possible-move').forEach(square => {
                     square.classList.remove('possible-move');
-                    const isLight = square.classList.contains('light');
-                    square.style.backgroundColor = isLight ? '#f0d9b5' : '#b58863';
                 });
             }
             
+            // Сделать ход
+            function makeMove(fromSquare, toSquare) {
+                const piece = fromSquare.textContent;
+                const fromId = fromSquare.id;
+                const toId = toSquare.id;
+                
+                // Сохраняем ход в историю
+                moveHistory.push({
+                    from: fromId,
+                    to: toId,
+                    piece: piece,
+                    captured: toSquare.textContent || null
+                });
+                
+                // Обновляем доску
+                toSquare.textContent = piece;

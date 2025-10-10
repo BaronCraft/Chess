@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Шахматная доска с правилами ходов</title>
+    <title>Шахматная доска с расширенными функциями</title>
     <style>
         * {
             margin: 0;
@@ -80,6 +80,7 @@
             border: 8px solid #5d4037;
             border-radius: 5px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
         }
         
         .board-row {
@@ -97,6 +98,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: bold;
+            user-select: none;
         }
         
         .square:hover {
@@ -224,6 +226,7 @@
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 20px;
+            max-height: 300px;
         }
         
         .moves-header {
@@ -252,10 +255,11 @@
             padding: 8px 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             transition: background 0.2s;
+            cursor: pointer;
         }
         
         .move-row:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .current-move {
@@ -297,6 +301,19 @@
             background-color: #f44336;
         }
         
+        .dragging {
+            opacity: 0.7;
+            z-index: 100;
+        }
+        
+        .drag-ghost {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1000;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
         @media (max-width: 1100px) {
             .container {
                 flex-direction: column;
@@ -311,8 +328,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>Шахматная доска с правилами ходов</h1>
-            <p class="subtitle">Все фигуры ходят по правилам. Белые фигуры полностью белые, чёрные - полностью чёрные</p>
+            <h1>Шахматная доска с расширенными функциями</h1>
+            <p class="subtitle">Переворот доски, перетаскивание фигур, пролистывание ходов колёсиком мыши</p>
         </header>
         
         <div class="board-container">
@@ -324,18 +341,21 @@
                 <button id="newGame">Новая игра</button>
                 <button id="undoMove">Отменить ход</button>
                 <button id="flipBoard">Перевернуть доску</button>
+                <button id="prevMove">← Предыдущий ход</button>
+                <button id="nextMove">Следующий ход →</button>
             </div>
             
             <div class="game-info">
                 <h3>Информация о партии</h3>
                 <p>Ход: <span id="currentTurn">белых</span></p>
                 <p>Количество ходов: <span id="moveCount">0</span></p>
+                <p>Просмотр хода: <span id="viewMove">-</span></p>
                 <div class="status active" id="gameStatus">Игра активна</div>
             </div>
         </div>
         
         <div class="notation-container">
-            <div class="moves-list">
+            <div class="moves-list" id="movesList">
                 <div class="moves-header">
                     <div class="move-number">№</div>
                     <div class="white-move">Белые</div>
@@ -347,30 +367,22 @@
             </div>
             
             <div class="rules-info">
-                <h3>Правила шахмат</h3>
+                <h3>Управление</h3>
                 <div class="rule">
                     <div class="rule-indicator" style="background-color: #4caf50;"></div>
-                    <span>Пешка: ходит на 1 клетку вперёд, на 2 с начальной позиции, бьёт по диагонали</span>
+                    <span>Клик - выбор фигуры и ход</span>
                 </div>
                 <div class="rule">
                     <div class="rule-indicator" style="background-color: #4caf50;"></div>
-                    <span>Ладья: ходит по горизонтали и вертикали</span>
+                    <span>Перетаскивание - перемещение фигур</span>
                 </div>
                 <div class="rule">
                     <div class="rule-indicator" style="background-color: #4caf50;"></div>
-                    <span>Конь: ходит буквой "Г"</span>
+                    <span>Колёсико мыши - пролистывание ходов</span>
                 </div>
                 <div class="rule">
                     <div class="rule-indicator" style="background-color: #4caf50;"></div>
-                    <span>Слон: ходит по диагонали</span>
-                </div>
-                <div class="rule">
-                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
-                    <span>Ферзь: ходит по горизонтали, вертикали и диагонали</span>
-                </div>
-                <div class="rule">
-                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
-                    <span>Король: ходит на 1 клетку в любом направлении</span>
+                    <span>Клик по ходу в нотации - просмотр позиции</span>
                 </div>
             </div>
         </div>
@@ -381,8 +393,10 @@
             // Инициализация шахматной доски
             const chessboard = document.getElementById('chessboard');
             const movesContainer = document.getElementById('movesContainer');
+            const movesList = document.getElementById('movesList');
             const currentTurnElement = document.getElementById('currentTurn');
             const moveCountElement = document.getElementById('moveCount');
+            const viewMoveElement = document.getElementById('viewMove');
             const gameStatusElement = document.getElementById('gameStatus');
             
             // Шахматные фигуры (белые и чёрные)
@@ -405,10 +419,21 @@
                 }
             };
             
+            // Переменные для состояния игры
+            let selectedSquare = null;
+            let currentTurn = 'white';
+            let moveCount = 0;
+            let moveHistory = [];
+            let boardFlipped = false;
+            let currentMoveIndex = -1;
+            let isViewingHistory = false;
+            let dragGhost = null;
+            
             // Создание шахматной доски
             function createChessboard() {
+                chessboard.innerHTML = '';
                 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-                const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+                const ranks = boardFlipped ? ['1', '2', '3', '4', '5', '6', '7', '8'] : ['8', '7', '6', '5', '4', '3', '2', '1'];
                 
                 // Начальная расстановка фигур
                 const initialPosition = {
@@ -431,28 +456,34 @@
                     row.className = 'board-row';
                     
                     for (let j = 0; j < 8; j++) {
+                        const file = files[boardFlipped ? 7 - j : j];
+                        const rank = ranks[i];
+                        const squareId = file + rank;
+                        
                         const square = document.createElement('div');
                         const isLight = (i + j) % 2 === 0;
                         square.className = `square ${isLight ? 'light' : 'dark'}`;
-                        square.id = `${files[j]}${ranks[i]}`;
+                        square.id = squareId;
+                        square.dataset.file = file;
+                        square.dataset.rank = rank;
                         
                         // Добавление координат
-                        if (i === 7) {
+                        if ((boardFlipped && i === 0) || (!boardFlipped && i === 7)) {
                             const fileCoord = document.createElement('span');
                             fileCoord.className = 'coordinates file-coord';
-                            fileCoord.textContent = files[j];
+                            fileCoord.textContent = file;
                             square.appendChild(fileCoord);
                         }
                         
-                        if (j === 0) {
+                        if ((boardFlipped && j === 7) || (!boardFlipped && j === 0)) {
                             const rankCoord = document.createElement('span');
                             rankCoord.className = 'coordinates rank-coord';
-                            rankCoord.textContent = ranks[i];
+                            rankCoord.textContent = rank;
                             square.appendChild(rankCoord);
                         }
                         
                         // Добавление фигур
-                        const piece = initialPosition[square.id];
+                        const piece = initialPosition[squareId];
                         if (piece) {
                             square.textContent = piece;
                             
@@ -466,24 +497,28 @@
                             }
                         }
                         
-                        // Обработчик клика
+                        // Обработчики событий
                         square.addEventListener('click', handleSquareClick);
+                        square.addEventListener('mousedown', handleDragStart);
+                        square.addEventListener('mouseup', handleDragEnd);
+                        square.addEventListener('mouseenter', handleDragOver);
+                        square.addEventListener('mouseleave', handleDragLeave);
                         
                         row.appendChild(square);
                     }
                     
                     chessboard.appendChild(row);
                 }
+                
+                // Добавляем обработчик колесика мыши
+                chessboard.addEventListener('wheel', handleWheelScroll);
+                movesList.addEventListener('wheel', handleWheelScroll);
             }
-            
-            // Переменные для состояния игры
-            let selectedSquare = null;
-            let currentTurn = 'white';
-            let moveCount = 0;
-            let moveHistory = [];
             
             // Обработчик клика по клетке
             function handleSquareClick(event) {
+                if (isViewingHistory) return;
+                
                 const square = event.currentTarget;
                 
                 // Если клетка уже выбрана
@@ -510,6 +545,206 @@
                     selectedSquare.classList.remove('selected');
                     selectedSquare = null;
                     clearPossibleMoves();
+                }
+            }
+            
+            // Начало перетаскивания
+            function handleDragStart(event) {
+                if (isViewingHistory) return;
+                
+                const square = event.currentTarget;
+                if (!square.textContent) return;
+                
+                if ((currentTurn === 'white' && isWhitePiece(square.textContent)) || 
+                    (currentTurn === 'black' && isBlackPiece(square.textContent))) {
+                    
+                    // Создаем призрачный элемент для перетаскивания
+                    dragGhost = document.createElement('div');
+                    dragGhost.className = 'drag-ghost';
+                    dragGhost.textContent = square.textContent;
+                    dragGhost.style.color = square.style.color;
+                    dragGhost.style.textShadow = square.style.textShadow;
+                    document.body.appendChild(dragGhost);
+                    
+                    // Позиционируем призрачный элемент
+                    updateDragGhostPosition(event);
+                    
+                    // Добавляем класс перетаскивания
+                    square.classList.add('dragging');
+                    
+                    // Показываем возможные ходы
+                    selectedSquare = square;
+                    showPossibleMoves(square);
+                    
+                    // Обработчики событий перетаскивания
+                    document.addEventListener('mousemove', handleDragMove);
+                    document.addEventListener('mouseup', handleDragEnd);
+                }
+            }
+            
+            // Перемещение при перетаскивании
+            function handleDragMove(event) {
+                if (dragGhost) {
+                    updateDragGhostPosition(event);
+                }
+            }
+            
+            // Обновление позиции призрачного элемента
+            function updateDragGhostPosition(event) {
+                if (dragGhost) {
+                    dragGhost.style.left = (event.pageX - 30) + 'px';
+                    dragGhost.style.top = (event.pageY - 30) + 'px';
+                }
+            }
+            
+            // Конец перетаскивания
+            function handleDragEnd(event) {
+                if (dragGhost) {
+                    document.body.removeChild(dragGhost);
+                    dragGhost = null;
+                }
+                
+                document.removeEventListener('mousemove', handleDragMove);
+                document.removeEventListener('mouseup', handleDragEnd);
+                
+                if (selectedSquare) {
+                    selectedSquare.classList.remove('dragging');
+                    
+                    // Находим клетку под курсором
+                    const targetElement = document.elementFromPoint(event.clientX, event.clientY);
+                    const targetSquare = targetElement?.closest('.square');
+                    
+                    if (targetSquare && targetSquare.classList.contains('possible-move')) {
+                        makeMove(selectedSquare, targetSquare);
+                    }
+                    
+                    selectedSquare.classList.remove('selected');
+                    selectedSquare = null;
+                    clearPossibleMoves();
+                }
+            }
+            
+            // Наведение на клетку при перетаскивании
+            function handleDragOver(event) {
+                if (selectedSquare && dragGhost) {
+                    const square = event.currentTarget;
+                    if (square.classList.contains('possible-move')) {
+                        square.style.backgroundColor = 'rgba(174, 198, 207, 0.7)';
+                    }
+                }
+            }
+            
+            // Уход с клетки при перетаскивании
+            function handleDragLeave(event) {
+                const square = event.currentTarget;
+                const isLight = square.classList.contains('light');
+                square.style.backgroundColor = isLight ? '#f0d9b5' : '#b58863';
+            }
+            
+            // Прокрутка колесиком мыши
+            function handleWheelScroll(event) {
+                event.preventDefault();
+                
+                if (event.deltaY < 0) {
+                    // Прокрутка вверх - предыдущий ход
+                    showPreviousMove();
+                } else {
+                    // Прокрутка вниз - следующий ход
+                    showNextMove();
+                }
+            }
+            
+            // Показать предыдущий ход
+            function showPreviousMove() {
+                if (currentMoveIndex > 0) {
+                    currentMoveIndex--;
+                    updateBoardToMove(currentMoveIndex);
+                    isViewingHistory = true;
+                    updateViewMoveIndicator();
+                }
+            }
+            
+            // Показать следующий ход
+            function showNextMove() {
+                if (currentMoveIndex < moveHistory.length - 1) {
+                    currentMoveIndex++;
+                    updateBoardToMove(currentMoveIndex);
+                    updateViewMoveIndicator();
+                    
+                    if (currentMoveIndex === moveHistory.length - 1) {
+                        isViewingHistory = false;
+                    }
+                }
+            }
+            
+            // Обновить доску до определенного хода
+            function updateBoardToMove(moveIndex) {
+                // Сначала сбрасываем доску к начальной позиции
+                resetBoardToInitial();
+                
+                // Применяем все ходы до указанного индекса
+                for (let i = 0; i <= moveIndex; i++) {
+                    const move = moveHistory[i];
+                    const fromSquare = document.getElementById(move.from);
+                    const toSquare = document.getElementById(move.to);
+                    
+                    toSquare.textContent = move.piece;
+                    toSquare.style.color = fromSquare.style.color;
+                    toSquare.style.textShadow = fromSquare.style.textShadow;
+                    fromSquare.textContent = '';
+                }
+                
+                // Обновляем текущий ход
+                if (moveIndex >= 0) {
+                    const lastMove = moveHistory[moveIndex];
+                    currentTurn = isWhitePiece(lastMove.piece) ? 'black' : 'white';
+                } else {
+                    currentTurn = 'white';
+                }
+                
+                updateCurrentTurn();
+            }
+            
+            // Сбросить доску к начальной позиции
+            function resetBoardToInitial() {
+                const initialPosition = {
+                    'a8': pieces.black.rook, 'b8': pieces.black.knight, 'c8': pieces.black.bishop, 
+                    'd8': pieces.black.queen, 'e8': pieces.black.king, 'f8': pieces.black.bishop, 
+                    'g8': pieces.black.knight, 'h8': pieces.black.rook,
+                    'a7': pieces.black.pawn, 'b7': pieces.black.pawn, 'c7': pieces.black.pawn, 
+                    'd7': pieces.black.pawn, 'e7': pieces.black.pawn, 'f7': pieces.black.pawn, 
+                    'g7': pieces.black.pawn, 'h7': pieces.black.pawn,
+                    'a2': pieces.white.pawn, 'b2': pieces.white.pawn, 'c2': pieces.white.pawn, 
+                    'd2': pieces.white.pawn, 'e2': pieces.white.pawn, 'f2': pieces.white.pawn, 
+                    'g2': pieces.white.pawn, 'h2': pieces.white.pawn,
+                    'a1': pieces.white.rook, 'b1': pieces.white.knight, 'c1': pieces.white.bishop, 
+                    'd1': pieces.white.queen, 'e1': pieces.white.king, 'f1': pieces.white.bishop, 
+                    'g1': pieces.white.knight, 'h1': pieces.white.rook
+                };
+                
+                document.querySelectorAll('.square').forEach(square => {
+                    const piece = initialPosition[square.id];
+                    if (piece) {
+                        square.textContent = piece;
+                        if (Object.values(pieces.white).includes(piece)) {
+                            square.style.color = 'white';
+                            square.style.textShadow = '0 0 3px rgba(0,0,0,0.7)';
+                        } else {
+                            square.style.color = 'black';
+                            square.style.textShadow = '0 0 3px rgba(255,255,255,0.7)';
+                        }
+                    } else {
+                        square.textContent = '';
+                    }
+                });
+            }
+            
+            // Обновить индикатор просматриваемого хода
+            function updateViewMoveIndicator() {
+                if (currentMoveIndex >= 0) {
+                    viewMoveElement.textContent = `Ход ${Math.floor(currentMoveIndex / 2) + 1} (${currentMoveIndex % 2 === 0 ? 'белые' : 'чёрные'})`;
+                } else {
+                    viewMoveElement.textContent = '-';
                 }
             }
             
@@ -742,210 +977,8 @@
             function clearPossibleMoves() {
                 document.querySelectorAll('.possible-move').forEach(square => {
                     square.classList.remove('possible-move');
+                    const isLight = square.classList.contains('light');
+                    square.style.backgroundColor = isLight ? '#f0d9b5' : '#b58863';
                 });
             }
             
-            // Сделать ход
-            function makeMove(fromSquare, toSquare) {
-                const piece = fromSquare.textContent;
-                const fromId = fromSquare.id;
-                const toId = toSquare.id;
-                
-                // Сохраняем ход в историю
-                moveHistory.push({
-                    from: fromId,
-                    to: toId,
-                    piece: piece,
-                    captured: toSquare.textContent || null
-                });
-                
-                // Обновляем доску
-                toSquare.textContent = piece;
-                toSquare.style.color = fromSquare.style.color;
-                toSquare.style.textShadow = fromSquare.style.textShadow;
-                fromSquare.textContent = '';
-                
-                // Обновляем счетчики
-                moveCount++;
-                updateMoveCount();
-                
-                // Меняем ход
-                currentTurn = currentTurn === 'white' ? 'black' : 'white';
-                updateCurrentTurn();
-                
-                // Обновляем нотацию
-                updateNotation();
-                
-                // Проверяем правила
-                checkRules();
-            }
-            
-            // Обновление отображения текущего хода
-            function updateCurrentTurn() {
-                currentTurnElement.textContent = currentTurn === 'white' ? 'белых' : 'чёрных';
-            }
-            
-            // Обновление счетчика ходов
-            function updateMoveCount() {
-                moveCountElement.textContent = moveCount;
-            }
-            
-            // Обновление нотации
-            function updateNotation() {
-                movesContainer.innerHTML = '';
-                
-                for (let i = 0; i < moveHistory.length; i += 2) {
-                    const moveRow = document.createElement('div');
-                    moveRow.className = 'move-row';
-                    
-                    const moveNumber = document.createElement('div');
-                    moveNumber.className = 'move-number';
-                    moveNumber.textContent = Math.floor(i / 2) + 1;
-                    
-                    const whiteMove = document.createElement('div');
-                    whiteMove.className = 'white-move';
-                    whiteMove.textContent = formatMove(moveHistory[i]);
-                    
-                    const blackMove = document.createElement('div');
-                    blackMove.className = 'black-move';
-                    
-                    if (moveHistory[i + 1]) {
-                        blackMove.textContent = formatMove(moveHistory[i + 1]);
-                    }
-                    
-                    moveRow.appendChild(moveNumber);
-                    moveRow.appendChild(whiteMove);
-                    moveRow.appendChild(blackMove);
-                    
-                    movesContainer.appendChild(moveRow);
-                }
-                
-                // Прокручиваем к последнему ходу
-                movesContainer.scrollTop = movesContainer.scrollHeight;
-            }
-            
-            // Форматирование хода для нотации
-            function formatMove(move) {
-                const pieceSymbols = {
-                    [pieces.white.pawn]: '', [pieces.black.pawn]: '',
-                    [pieces.white.rook]: 'R', [pieces.black.rook]: 'R',
-                    [pieces.white.knight]: 'N', [pieces.black.knight]: 'N',
-                    [pieces.white.bishop]: 'B', [pieces.black.bishop]: 'B',
-                    [pieces.white.queen]: 'Q', [pieces.black.queen]: 'Q',
-                    [pieces.white.king]: 'K', [pieces.black.king]: 'K'
-                };
-                
-                let notation = pieceSymbols[move.piece] + move.to;
-                
-                if (move.captured) {
-                    if (!pieceSymbols[move.piece]) {
-                        notation = move.from[0] + 'x' + move.to;
-                    } else {
-                        notation = pieceSymbols[move.piece] + 'x' + move.to;
-                    }
-                }
-                
-                return notation;
-            }
-            
-            // Проверка правил
-            function checkRules() {
-                // В реальной реализации здесь будет сложная логика проверки
-                // Для демонстрации используем случайные значения
-                
-                // Шах
-                const isCheck = Math.random() > 0.8;
-                
-                if (isCheck) {
-                    gameStatusElement.textContent = 'Шах!';
-                    gameStatusElement.className = 'status check';
-                    
-                    // С вероятностью 20% - мат
-                    const isCheckmate = Math.random() > 0.8;
-                    
-                    if (isCheckmate) {
-                        gameStatusElement.textContent = 'Мат!';
-                        gameStatusElement.className = 'status checkmate';
-                    }
-                } else {
-                    gameStatusElement.textContent = 'Игра активна';
-                    gameStatusElement.className = 'status active';
-                }
-            }
-            
-            // Обработчики кнопок
-            document.getElementById('newGame').addEventListener('click', function() {
-                // Сброс игры
-                chessboard.innerHTML = '';
-                createChessboard();
-                
-                selectedSquare = null;
-                currentTurn = 'white';
-                moveCount = 0;
-                moveHistory = [];
-                
-                updateCurrentTurn();
-                updateMoveCount();
-                updateNotation();
-                
-                gameStatusElement.textContent = 'Игра активна';
-                gameStatusElement.className = 'status active';
-            });
-            
-            document.getElementById('undoMove').addEventListener('click', function() {
-                if (moveHistory.length === 0) return;
-                
-                const lastMove = moveHistory.pop();
-                const fromSquare = document.getElementById(lastMove.from);
-                const toSquare = document.getElementById(lastMove.to);
-                
-                // Восстанавливаем фигуру
-                fromSquare.textContent = lastMove.piece;
-                fromSquare.style.color = toSquare.style.color;
-                fromSquare.style.textShadow = toSquare.style.textShadow;
-                
-                // Восстанавливаем захваченную фигуру, если была
-                if (lastMove.captured) {
-                    toSquare.textContent = lastMove.captured;
-                    
-                    // Устанавливаем цвет захваченной фигуры
-                    if (isWhitePiece(lastMove.captured)) {
-                        toSquare.style.color = 'white';
-                        toSquare.style.textShadow = '0 0 3px rgba(0,0,0,0.7)';
-                    } else {
-                        toSquare.style.color = 'black';
-                        toSquare.style.textShadow = '0 0 3px rgba(255,255,255,0.7)';
-                    }
-                } else {
-                    toSquare.textContent = '';
-                }
-                
-                // Обновляем счетчики
-                moveCount--;
-                updateMoveCount();
-                
-                // Меняем ход
-                currentTurn = currentTurn === 'white' ? 'black' : 'white';
-                updateCurrentTurn();
-                
-                // Обновляем нотацию
-                updateNotation();
-                
-                // Сбрасываем статус игры
-                gameStatusElement.textContent = 'Игра активна';
-                gameStatusElement.className = 'status active';
-            });
-            
-            document.getElementById('flipBoard').addEventListener('click', function() {
-                // В реальной реализации здесь будет логика переворота доски
-                alert('Функция переворота доски будет реализована в полной версии');
-            });
-            
-            // Инициализация
-            createChessboard();
-            updateCurrentTurn();
-            updateMoveCount();
-        });
-    </script>
-</body>
-</html>

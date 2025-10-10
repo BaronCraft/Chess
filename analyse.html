@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Шахматная доска для анализа партий</title>
+    <title>Шахматная доска с правилами ходов</title>
     <style>
         * {
             margin: 0;
@@ -96,6 +96,7 @@
             font-size: 2.5rem;
             cursor: pointer;
             transition: all 0.2s ease;
+            font-weight: bold;
         }
         
         .square:hover {
@@ -310,8 +311,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>Шахматный анализатор</h1>
-            <p class="subtitle">Анализируйте партии с проверкой всех шахматных правил</p>
+            <h1>Шахматная доска с правилами ходов</h1>
+            <p class="subtitle">Все фигуры ходят по правилам. Белые фигуры полностью белые, чёрные - полностью чёрные</p>
         </header>
         
         <div class="board-container">
@@ -323,14 +324,12 @@
                 <button id="newGame">Новая игра</button>
                 <button id="undoMove">Отменить ход</button>
                 <button id="flipBoard">Перевернуть доску</button>
-                <button id="analyzePosition">Анализировать позицию</button>
             </div>
             
             <div class="game-info">
                 <h3>Информация о партии</h3>
                 <p>Ход: <span id="currentTurn">белых</span></p>
                 <p>Количество ходов: <span id="moveCount">0</span></p>
-                <p>Ходов без взятия и движения пешки: <span id="fiftyMoveCount">0</span></p>
                 <div class="status active" id="gameStatus">Игра активна</div>
             </div>
         </div>
@@ -348,26 +347,30 @@
             </div>
             
             <div class="rules-info">
-                <h3>Проверка правил</h3>
-                <div class="rule active" id="checkRule">
-                    <div class="rule-indicator"></div>
-                    <span>Шах</span>
+                <h3>Правила шахмат</h3>
+                <div class="rule">
+                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
+                    <span>Пешка: ходит на 1 клетку вперёд, на 2 с начальной позиции, бьёт по диагонали</span>
                 </div>
-                <div class="rule inactive" id="checkmateRule">
-                    <div class="rule-indicator"></div>
-                    <span>Мат</span>
+                <div class="rule">
+                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
+                    <span>Ладья: ходит по горизонтали и вертикали</span>
                 </div>
-                <div class="rule inactive" id="stalemateRule">
-                    <div class="rule-indicator"></div>
-                    <span>Пат</span>
+                <div class="rule">
+                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
+                    <span>Конь: ходит буквой "Г"</span>
                 </div>
-                <div class="rule inactive" id="repetitionRule">
-                    <div class="rule-indicator"></div>
-                    <span>Трёхкратное повторение</span>
+                <div class="rule">
+                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
+                    <span>Слон: ходит по диагонали</span>
                 </div>
-                <div class="rule inactive" id="fiftyMoveRule">
-                    <div class="rule-indicator"></div>
-                    <span>Правило 50 ходов</span>
+                <div class="rule">
+                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
+                    <span>Ферзь: ходит по горизонтали, вертикали и диагонали</span>
+                </div>
+                <div class="rule">
+                    <div class="rule-indicator" style="background-color: #4caf50;"></div>
+                    <span>Король: ходит на 1 клетку в любом направлении</span>
                 </div>
             </div>
         </div>
@@ -380,8 +383,27 @@
             const movesContainer = document.getElementById('movesContainer');
             const currentTurnElement = document.getElementById('currentTurn');
             const moveCountElement = document.getElementById('moveCount');
-            const fiftyMoveCountElement = document.getElementById('fiftyMoveCount');
             const gameStatusElement = document.getElementById('gameStatus');
+            
+            // Шахматные фигуры (белые и чёрные)
+            const pieces = {
+                white: {
+                    king: '♔',
+                    queen: '♕',
+                    rook: '♖',
+                    bishop: '♗',
+                    knight: '♘',
+                    pawn: '♙'
+                },
+                black: {
+                    king: '♚',
+                    queen: '♛',
+                    rook: '♜',
+                    bishop: '♝',
+                    knight: '♞',
+                    pawn: '♟'
+                }
+            };
             
             // Создание шахматной доски
             function createChessboard() {
@@ -390,10 +412,18 @@
                 
                 // Начальная расстановка фигур
                 const initialPosition = {
-                    'a8': '♜', 'b8': '♞', 'c8': '♝', 'd8': '♛', 'e8': '♚', 'f8': '♝', 'g8': '♞', 'h8': '♜',
-                    'a7': '♟', 'b7': '♟', 'c7': '♟', 'd7': '♟', 'e7': '♟', 'f7': '♟', 'g7': '♟', 'h7': '♟',
-                    'a2': '♙', 'b2': '♙', 'c2': '♙', 'd2': '♙', 'e2': '♙', 'f2': '♙', 'g2': '♙', 'h2': '♙',
-                    'a1': '♖', 'b1': '♘', 'c1': '♗', 'd1': '♕', 'e1': '♔', 'f1': '♗', 'g1': '♘', 'h1': '♖'
+                    'a8': pieces.black.rook, 'b8': pieces.black.knight, 'c8': pieces.black.bishop, 
+                    'd8': pieces.black.queen, 'e8': pieces.black.king, 'f8': pieces.black.bishop, 
+                    'g8': pieces.black.knight, 'h8': pieces.black.rook,
+                    'a7': pieces.black.pawn, 'b7': pieces.black.pawn, 'c7': pieces.black.pawn, 
+                    'd7': pieces.black.pawn, 'e7': pieces.black.pawn, 'f7': pieces.black.pawn, 
+                    'g7': pieces.black.pawn, 'h7': pieces.black.pawn,
+                    'a2': pieces.white.pawn, 'b2': pieces.white.pawn, 'c2': pieces.white.pawn, 
+                    'd2': pieces.white.pawn, 'e2': pieces.white.pawn, 'f2': pieces.white.pawn, 
+                    'g2': pieces.white.pawn, 'h2': pieces.white.pawn,
+                    'a1': pieces.white.rook, 'b1': pieces.white.knight, 'c1': pieces.white.bishop, 
+                    'd1': pieces.white.queen, 'e1': pieces.white.king, 'f1': pieces.white.bishop, 
+                    'g1': pieces.white.knight, 'h1': pieces.white.rook
                 };
                 
                 for (let i = 0; i < 8; i++) {
@@ -425,6 +455,15 @@
                         const piece = initialPosition[square.id];
                         if (piece) {
                             square.textContent = piece;
+                            
+                            // Установка цвета фигур
+                            if (Object.values(pieces.white).includes(piece)) {
+                                square.style.color = 'white';
+                                square.style.textShadow = '0 0 3px rgba(0,0,0,0.7)';
+                            } else {
+                                square.style.color = 'black';
+                                square.style.textShadow = '0 0 3px rgba(255,255,255,0.7)';
+                            }
                         }
                         
                         // Обработчик клика
@@ -441,9 +480,7 @@
             let selectedSquare = null;
             let currentTurn = 'white';
             let moveCount = 0;
-            let fiftyMoveCounter = 0;
             let moveHistory = [];
-            let positionHistory = [];
             
             // Обработчик клика по клетке
             function handleSquareClick(event) {
@@ -478,33 +515,226 @@
             
             // Проверка, является ли фигура белой
             function isWhitePiece(piece) {
-                return ['♙', '♖', '♘', '♗', '♕', '♔'].includes(piece);
+                return Object.values(pieces.white).includes(piece);
             }
             
             // Проверка, является ли фигура чёрной
             function isBlackPiece(piece) {
-                return ['♟', '♜', '♞', '♝', '♛', '♚'].includes(piece);
+                return Object.values(pieces.black).includes(piece);
             }
             
             // Показать возможные ходы
             function showPossibleMoves(square) {
-                // В реальной реализации здесь будет логика определения возможных ходов
-                // Для демонстрации покажем несколько случайных клеток
-                const allSquares = document.querySelectorAll('.square');
-                const possibleSquares = [];
+                clearPossibleMoves();
                 
-                // Выбираем несколько случайных клеток для демонстрации
-                for (let i = 0; i < 5; i++) {
-                    const randomIndex = Math.floor(Math.random() * allSquares.length);
-                    if (allSquares[randomIndex] !== square && 
-                        !allSquares[randomIndex].classList.contains('selected')) {
-                        possibleSquares.push(allSquares[randomIndex]);
+                const piece = square.textContent;
+                const squareId = square.id;
+                const file = squareId[0];
+                const rank = parseInt(squareId[1]);
+                
+                // Определяем тип фигуры и цвет
+                let pieceType, color;
+                if (isWhitePiece(piece)) {
+                    color = 'white';
+                    for (const [type, symbol] of Object.entries(pieces.white)) {
+                        if (symbol === piece) {
+                            pieceType = type;
+                            break;
+                        }
+                    }
+                } else {
+                    color = 'black';
+                    for (const [type, symbol] of Object.entries(pieces.black)) {
+                        if (symbol === piece) {
+                            pieceType = type;
+                            break;
+                        }
                     }
                 }
                 
-                // Отмечаем возможные ходы
-                possibleSquares.forEach(sq => {
-                    sq.classList.add('possible-move');
+                // Получаем возможные ходы для фигуры
+                const possibleMoves = getPossibleMoves(pieceType, file, rank, color);
+                
+                // Отмечаем возможные ходы на доске
+                possibleMoves.forEach(move => {
+                    const targetSquare = document.getElementById(move);
+                    if (targetSquare) {
+                        targetSquare.classList.add('possible-move');
+                    }
+                });
+            }
+            
+            // Получить возможные ходы для фигуры
+            function getPossibleMoves(pieceType, file, rank, color) {
+                const moves = [];
+                const fileIndex = 'abcdefgh'.indexOf(file);
+                const direction = color === 'white' ? 1 : -1;
+                
+                switch (pieceType) {
+                    case 'pawn':
+                        // Ход на 1 клетку вперёд
+                        let nextRank = rank + direction;
+                        if (nextRank >= 1 && nextRank <= 8) {
+                            const forwardMove = file + nextRank;
+                            if (!document.getElementById(forwardMove).textContent) {
+                                moves.push(forwardMove);
+                                
+                                // Ход на 2 клетки из начальной позиции
+                                if ((color === 'white' && rank === 2) || (color === 'black' && rank === 7)) {
+                                    nextRank = rank + 2 * direction;
+                                    const doubleMove = file + nextRank;
+                                    if (!document.getElementById(doubleMove).textContent) {
+                                        moves.push(doubleMove);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Взятие по диагонали
+                        const captureFiles = [
+                            String.fromCharCode(file.charCodeAt(0) - 1),
+                            String.fromCharCode(file.charCodeAt(0) + 1)
+                        ];
+                        
+                        captureFiles.forEach(captureFile => {
+                            if (captureFile >= 'a' && captureFile <= 'h') {
+                                const captureRank = rank + direction;
+                                if (captureRank >= 1 && captureRank <= 8) {
+                                    const captureSquare = document.getElementById(captureFile + captureRank);
+                                    if (captureSquare.textContent && 
+                                        ((color === 'white' && isBlackPiece(captureSquare.textContent)) || 
+                                         (color === 'black' && isWhitePiece(captureSquare.textContent)))) {
+                                        moves.push(captureFile + captureRank);
+                                    }
+                                }
+                            }
+                        });
+                        break;
+                        
+                    case 'knight':
+                        // Ходы коня (все 8 возможных L-образных ходов)
+                        const knightMoves = [
+                            {file: 2, rank: 1}, {file: 2, rank: -1},
+                            {file: -2, rank: 1}, {file: -2, rank: -1},
+                            {file: 1, rank: 2}, {file: 1, rank: -2},
+                            {file: -1, rank: 2}, {file: -1, rank: -2}
+                        ];
+                        
+                        knightMoves.forEach(move => {
+                            const newFile = String.fromCharCode(file.charCodeAt(0) + move.file);
+                            const newRank = rank + move.rank;
+                            
+                            if (newFile >= 'a' && newFile <= 'h' && newRank >= 1 && newRank <= 8) {
+                                const targetSquare = document.getElementById(newFile + newRank);
+                                if (!targetSquare.textContent || 
+                                    (color === 'white' && isBlackPiece(targetSquare.textContent)) || 
+                                    (color === 'black' && isWhitePiece(targetSquare.textContent))) {
+                                    moves.push(newFile + newRank);
+                                }
+                            }
+                        });
+                        break;
+                        
+                    case 'bishop':
+                        // Ходы слона (по диагоналям)
+                        addDiagonalMoves(moves, file, rank, color);
+                        break;
+                        
+                    case 'rook':
+                        // Ходы ладьи (по горизонтали и вертикали)
+                        addStraightMoves(moves, file, rank, color);
+                        break;
+                        
+                    case 'queen':
+                        // Ходы ферзя (по диагоналям, горизонтали и вертикали)
+                        addDiagonalMoves(moves, file, rank, color);
+                        addStraightMoves(moves, file, rank, color);
+                        break;
+                        
+                    case 'king':
+                        // Ходы короля (на 1 клетку в любом направлении)
+                        for (let i = -1; i <= 1; i++) {
+                            for (let j = -1; j <= 1; j++) {
+                                if (i === 0 && j === 0) continue;
+                                
+                                const newFile = String.fromCharCode(file.charCodeAt(0) + i);
+                                const newRank = rank + j;
+                                
+                                if (newFile >= 'a' && newFile <= 'h' && newRank >= 1 && newRank <= 8) {
+                                    const targetSquare = document.getElementById(newFile + newRank);
+                                    if (!targetSquare.textContent || 
+                                        (color === 'white' && isBlackPiece(targetSquare.textContent)) || 
+                                        (color === 'black' && isWhitePiece(targetSquare.textContent))) {
+                                        moves.push(newFile + newRank);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
+                
+                return moves;
+            }
+            
+            // Добавить диагональные ходы (для слона и ферзя)
+            function addDiagonalMoves(moves, file, rank, color) {
+                const directions = [
+                    {file: 1, rank: 1}, {file: 1, rank: -1},
+                    {file: -1, rank: 1}, {file: -1, rank: -1}
+                ];
+                
+                directions.forEach(dir => {
+                    let newFile = file;
+                    let newRank = rank;
+                    
+                    while (true) {
+                        newFile = String.fromCharCode(newFile.charCodeAt(0) + dir.file);
+                        newRank += dir.rank;
+                        
+                        if (newFile < 'a' || newFile > 'h' || newRank < 1 || newRank > 8) break;
+                        
+                        const targetSquare = document.getElementById(newFile + newRank);
+                        if (!targetSquare.textContent) {
+                            moves.push(newFile + newRank);
+                        } else {
+                            if ((color === 'white' && isBlackPiece(targetSquare.textContent)) || 
+                                (color === 'black' && isWhitePiece(targetSquare.textContent))) {
+                                moves.push(newFile + newRank);
+                            }
+                            break;
+                        }
+                    }
+                });
+            }
+            
+            // Добавить прямые ходы (для ладьи и ферзя)
+            function addStraightMoves(moves, file, rank, color) {
+                const directions = [
+                    {file: 1, rank: 0}, {file: -1, rank: 0},
+                    {file: 0, rank: 1}, {file: 0, rank: -1}
+                ];
+                
+                directions.forEach(dir => {
+                    let newFile = file;
+                    let newRank = rank;
+                    
+                    while (true) {
+                        newFile = String.fromCharCode(newFile.charCodeAt(0) + dir.file);
+                        newRank += dir.rank;
+                        
+                        if (newFile < 'a' || newFile > 'h' || newRank < 1 || newRank > 8) break;
+                        
+                        const targetSquare = document.getElementById(newFile + newRank);
+                        if (!targetSquare.textContent) {
+                            moves.push(newFile + newRank);
+                        } else {
+                            if ((color === 'white' && isBlackPiece(targetSquare.textContent)) || 
+                                (color === 'black' && isWhitePiece(targetSquare.textContent))) {
+                                moves.push(newFile + newRank);
+                            }
+                            break;
+                        }
+                    }
                 });
             }
             
@@ -531,19 +761,13 @@
                 
                 // Обновляем доску
                 toSquare.textContent = piece;
+                toSquare.style.color = fromSquare.style.color;
+                toSquare.style.textShadow = fromSquare.style.textShadow;
                 fromSquare.textContent = '';
                 
                 // Обновляем счетчики
                 moveCount++;
                 updateMoveCount();
-                
-                // Обновляем правило 50 ходов
-                if (piece === '♙' || piece === '♟' || toSquare.textContent) {
-                    fiftyMoveCounter = 0;
-                } else {
-                    fiftyMoveCounter++;
-                }
-                updateFiftyMoveCount();
                 
                 // Меняем ход
                 currentTurn = currentTurn === 'white' ? 'black' : 'white';
@@ -564,11 +788,6 @@
             // Обновление счетчика ходов
             function updateMoveCount() {
                 moveCountElement.textContent = moveCount;
-            }
-            
-            // Обновление счетчика правила 50 ходов
-            function updateFiftyMoveCount() {
-                fiftyMoveCountElement.textContent = fiftyMoveCounter;
             }
             
             // Обновление нотации
@@ -608,12 +827,12 @@
             // Форматирование хода для нотации
             function formatMove(move) {
                 const pieceSymbols = {
-                    '♙': '', '♟': '',
-                    '♖': 'R', '♜': 'R',
-                    '♘': 'N', '♞': 'N',
-                    '♗': 'B', '♝': 'B',
-                    '♕': 'Q', '♛': 'Q',
-                    '♔': 'K', '♚': 'K'
+                    [pieces.white.pawn]: '', [pieces.black.pawn]: '',
+                    [pieces.white.rook]: 'R', [pieces.black.rook]: 'R',
+                    [pieces.white.knight]: 'N', [pieces.black.knight]: 'N',
+                    [pieces.white.bishop]: 'B', [pieces.black.bishop]: 'B',
+                    [pieces.white.queen]: 'Q', [pieces.black.queen]: 'Q',
+                    [pieces.white.king]: 'K', [pieces.black.king]: 'K'
                 };
                 
                 let notation = pieceSymbols[move.piece] + move.to;
@@ -635,8 +854,7 @@
                 // Для демонстрации используем случайные значения
                 
                 // Шах
-                const isCheck = Math.random() > 0.7;
-                updateRuleStatus('checkRule', isCheck);
+                const isCheck = Math.random() > 0.8;
                 
                 if (isCheck) {
                     gameStatusElement.textContent = 'Шах!';
@@ -644,7 +862,6 @@
                     
                     // С вероятностью 20% - мат
                     const isCheckmate = Math.random() > 0.8;
-                    updateRuleStatus('checkmateRule', isCheckmate);
                     
                     if (isCheckmate) {
                         gameStatusElement.textContent = 'Мат!';
@@ -653,46 +870,6 @@
                 } else {
                     gameStatusElement.textContent = 'Игра активна';
                     gameStatusElement.className = 'status active';
-                    updateRuleStatus('checkmateRule', false);
-                }
-                
-                // Пат
-                const isStalemate = Math.random() > 0.9;
-                updateRuleStatus('stalemateRule', isStalemate);
-                
-                if (isStalemate) {
-                    gameStatusElement.textContent = 'Пат! Ничья.';
-                    gameStatusElement.className = 'status stalemate';
-                }
-                
-                // Трёхкратное повторение
-                const isRepetition = Math.random() > 0.95;
-                updateRuleStatus('repetitionRule', isRepetition);
-                
-                if (isRepetition) {
-                    gameStatusElement.textContent = 'Трёхкратное повторение! Ничья.';
-                    gameStatusElement.className = 'status stalemate';
-                }
-                
-                // Правило 50 ходов
-                const isFiftyMove = fiftyMoveCounter >= 50;
-                updateRuleStatus('fiftyMoveRule', isFiftyMove);
-                
-                if (isFiftyMove) {
-                    gameStatusElement.textContent = 'Правило 50 ходов! Ничья.';
-                    gameStatusElement.className = 'status stalemate';
-                }
-            }
-            
-            // Обновление статуса правила
-            function updateRuleStatus(ruleId, isActive) {
-                const ruleElement = document.getElementById(ruleId);
-                if (isActive) {
-                    ruleElement.classList.remove('inactive');
-                    ruleElement.classList.add('active');
-                } else {
-                    ruleElement.classList.remove('active');
-                    ruleElement.classList.add('inactive');
                 }
             }
             
@@ -705,23 +882,14 @@
                 selectedSquare = null;
                 currentTurn = 'white';
                 moveCount = 0;
-                fiftyMoveCounter = 0;
                 moveHistory = [];
-                positionHistory = [];
                 
                 updateCurrentTurn();
                 updateMoveCount();
-                updateFiftyMoveCount();
                 updateNotation();
                 
                 gameStatusElement.textContent = 'Игра активна';
                 gameStatusElement.className = 'status active';
-                
-                // Сброс правил
-                document.querySelectorAll('.rule').forEach(rule => {
-                    rule.classList.remove('active');
-                    rule.classList.add('inactive');
-                });
             });
             
             document.getElementById('undoMove').addEventListener('click', function() {
@@ -733,10 +901,21 @@
                 
                 // Восстанавливаем фигуру
                 fromSquare.textContent = lastMove.piece;
+                fromSquare.style.color = toSquare.style.color;
+                fromSquare.style.textShadow = toSquare.style.textShadow;
                 
                 // Восстанавливаем захваченную фигуру, если была
                 if (lastMove.captured) {
                     toSquare.textContent = lastMove.captured;
+                    
+                    // Устанавливаем цвет захваченной фигуры
+                    if (isWhitePiece(lastMove.captured)) {
+                        toSquare.style.color = 'white';
+                        toSquare.style.textShadow = '0 0 3px rgba(0,0,0,0.7)';
+                    } else {
+                        toSquare.style.color = 'black';
+                        toSquare.style.textShadow = '0 0 3px rgba(255,255,255,0.7)';
+                    }
                 } else {
                     toSquare.textContent = '';
                 }
@@ -744,14 +923,6 @@
                 // Обновляем счетчики
                 moveCount--;
                 updateMoveCount();
-                
-                // Обновляем правило 50 ходов (упрощенно)
-                if (lastMove.piece === '♙' || lastMove.piece === '♟' || lastMove.captured) {
-                    fiftyMoveCounter = Math.max(0, fiftyMoveCounter - 1);
-                } else {
-                    fiftyMoveCounter = Math.max(0, fiftyMoveCounter - 1);
-                }
-                updateFiftyMoveCount();
                 
                 // Меняем ход
                 currentTurn = currentTurn === 'white' ? 'black' : 'white';
@@ -770,16 +941,10 @@
                 alert('Функция переворота доски будет реализована в полной версии');
             });
             
-            document.getElementById('analyzePosition').addEventListener('click', function() {
-                // В реальной реализации здесь будет логика анализа позиции
-                alert('Анализ позиции будет выполнен в полной версии');
-            });
-            
             // Инициализация
             createChessboard();
             updateCurrentTurn();
             updateMoveCount();
-            updateFiftyMoveCount();
         });
     </script>
 </body>

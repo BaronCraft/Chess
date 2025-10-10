@@ -328,8 +328,8 @@
                 
                 <div class="controls">
                     <button id="flipBoard">Перевернуть доску</button>
-                    <button id="newGame">Новая игра</button>
                     <button id="undoMove">Отменить ход</button>
+                    <button id="resetGame">Сбросить игру</button>
                 </div>
                 
                 <div class="status-bar" id="statusBar">
@@ -677,9 +677,6 @@
                     return true;
                 }
                 
-                // Взятие на проходе (здесь упрощенно)
-                // Рокировка (здесь упрощенно)
-                
                 return false;
             }
             
@@ -979,7 +976,7 @@
             initializeBoard();
         });
         
-        document.getElementById('newGame').addEventListener('click', function() {
+        document.getElementById('resetGame').addEventListener('click', function() {
             boardState = [];
             currentPlayer = 'white';
             selectedSquare = null;
@@ -1024,4 +1021,8 @@
             // Обновляем интерфейс
             updateMovesList();
             checkGameStatus();
-            updateStatus
+            updateStatusBar();
+        });
+        
+        // Обработчик колесика мыши для перемотки ходов
+        document

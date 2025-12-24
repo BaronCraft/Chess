@@ -1,1 +1,773 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Шахматы</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        h1 {
+            margin: 20px 0;
+            color: #f8f9fa;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #gameContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        #boardContainer {
+            flex: 1;
+            min-width: 500px;
+            height: 600px;
+            position: relative;
+        }
+
+        #infoPanel {
+            flex: 0 0 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #status {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            min-height: 40px;
+        }
+
+        #movesList {
+            height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #4cc9f0;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #4361ee;
+            transform: translateY(-2px);
+        }
+
+        .move-item {
+            padding: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .piece-info {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+            #gameContainer {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            #boardContainer {
+                min-width: 90vw;
+                height: 90vw;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+</head>
+<body>
+    <h1>3D Шахматы</h1>
+    
+    <div id="gameContainer">
+        <div id="boardContainer"></div>
+        
+        <div id="infoPanel">
+            <div id="status">Ход белых</div>
+            <div id="movesList"></div>
+            <div class="piece-info">Выберите фигуру и нажмите на клетку для хода</div>
+            <div id="controls">
+                <button onclick="newGame()">Новая игра</button>
+                <button onclick="undoMove()">Отменить ход</button>
+                <button onclick="switchView()">Сменить вид</button>
+                <button onclick="resetCamera()">Сбросить камеру</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Основные переменные
+        let scene, camera, renderer, controls;
+        let board = [];
+        let pieces = [];
+        let selectedPiece = null;
+        let possibleMoves = [];
+        let isWhiteTurn = true;
+        let moveHistory = [];
+        let boardSize = 8;
+        let squareSize = 1;
+        let pieceHeight = 0.3;
+        
+        // Цвета
+        const colors = {
+            lightSquare: 0xF0D9B5,
+            darkSquare: 0xB58863,
+            whitePiece: 0xFFFFFF,
+            blackPiece: 0x222222,
+            highlight: 0x00FF00,
+            possibleMove: 0x44FF44
+        };
+
+        // Инициализация
+        function init() {
+            // Создание сцены
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            
+            // Создание камеры
+            camera = new THREE.PerspectiveCamera(45, 
+                document.getElementById('boardContainer').offsetWidth / 
+                document.getElementById('boardContainer').offsetHeight, 
+                0.1, 1000
+            );
+            camera.position.set(10, 12, 10);
+            camera.lookAt(3.5, 0, 3.5);
+            
+            // Создание рендерера
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(
+                document.getElementById('boardContainer').offsetWidth,
+                document.getElementById('boardContainer').offsetHeight
+            );
+            renderer.shadowMap.enabled = true;
+            document.getElementById('boardContainer').appendChild(renderer.domElement);
+            
+            // Добавление управления камерой
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Освещение
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            // Создание доски
+            createBoard();
+            
+            // Расстановка фигур
+            setupPieces();
+            
+            // Начало анимации
+            animate();
+            
+            // Обработка кликов
+            renderer.domElement.addEventListener('click', onCanvasClick, false);
+            
+            // Обработка изменения размера окна
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Создание шахматной доски
+        function createBoard() {
+            const boardGroup = new THREE.Group();
+            
+            for (let row = 0; row < boardSize; row++) {
+                board[row] = [];
+                for (let col = 0; col < boardSize; col++) {
+                    const isLight = (row + col) % 2 === 0;
+                    const color = isLight ? colors.lightSquare : colors.darkSquare;
+                    
+                    // Создание клетки
+                    const geometry = new THREE.BoxGeometry(squareSize, 0.1, squareSize);
+                    const material = new THREE.MeshPhongMaterial({ color: color });
+                    const square = new THREE.Mesh(geometry, material);
+                    
+                    square.position.set(
+                        col * squareSize,
+                        -0.05,
+                        row * squareSize
+                    );
+                    
+                    square.userData = { row, col, isSquare: true };
+                    boardGroup.add(square);
+                    board[row][col] = { piece: null, square: square };
+                }
+            }
+            
+            // Основание доски
+            const baseGeometry = new THREE.BoxGeometry(
+                boardSize * squareSize + 0.5,
+                0.2,
+                boardSize * squareSize + 0.5
+            );
+            const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x5D4037 });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.set(
+                (boardSize * squareSize) / 2 - squareSize / 2,
+                -0.15,
+                (boardSize * squareSize) / 2 - squareSize / 2
+            );
+            boardGroup.add(base);
+            
+            scene.add(boardGroup);
+        }
+
+        // Создание фигур
+        function createPiece(type, color, row, col) {
+            const pieceGroup = new THREE.Group();
+            const pieceColor = color === 'white' ? colors.whitePiece : colors.blackPiece;
+            const material = new THREE.MeshPhongMaterial({ color: pieceColor });
+            
+            // Основание фигуры
+            const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16);
+            const base = new THREE.Mesh(baseGeometry, material);
+            base.position.y = pieceHeight / 2;
+            pieceGroup.add(base);
+            
+            // Разные формы для разных фигур
+            let topGeometry;
+            switch(type) {
+                case 'pawn':
+                    topGeometry = new THREE.ConeGeometry(0.3, 0.6, 16);
+                    break;
+                case 'rook':
+                    topGeometry = new THREE.BoxGeometry(0.5, 0.6, 0.5);
+                    break;
+                case 'knight':
+                    topGeometry = new THREE.ConeGeometry(0.4, 0.7, 16);
+                    break;
+                case 'bishop':
+                    topGeometry = new THREE.ConeGeometry(0.35, 0.8, 16);
+                    break;
+                case 'queen':
+                    topGeometry = new THREE.ConeGeometry(0.25, 0.8, 8);
+                    break;
+                case 'king':
+                    const sphereGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+                    const sphere = new THREE.Mesh(sphereGeometry, material);
+                    sphere.position.y = 0.7;
+                    pieceGroup.add(sphere);
+                    topGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.6, 16);
+                    break;
+            }
+            
+            if (topGeometry) {
+                const top = new THREE.Mesh(topGeometry, material);
+                top.position.y = pieceHeight + 0.3;
+                pieceGroup.add(top);
+            }
+            
+            pieceGroup.position.set(
+                col * squareSize,
+                pieceHeight / 2 + 0.05,
+                row * squareSize
+            );
+            
+            pieceGroup.userData = {
+                type: type,
+                color: color,
+                row: row,
+                col: col,
+                isPiece: true
+            };
+            
+            return pieceGroup;
+        }
+
+        // Начальная расстановка фигур
+        function setupPieces() {
+            // Пешки
+            for (let col = 0; col < boardSize; col++) {
+                addPiece('pawn', 'black', 1, col);
+                addPiece('pawn', 'white', 6, col);
+            }
+            
+            // Ладьи
+            addPiece('rook', 'black', 0, 0);
+            addPiece('rook', 'black', 0, 7);
+            addPiece('rook', 'white', 7, 0);
+            addPiece('rook', 'white', 7, 7);
+            
+            // Кони
+            addPiece('knight', 'black', 0, 1);
+            addPiece('knight', 'black', 0, 6);
+            addPiece('knight', 'white', 7, 1);
+            addPiece('knight', 'white', 7, 6);
+            
+            // Слоны
+            addPiece('bishop', 'black', 0, 2);
+            addPiece('bishop', 'black', 0, 5);
+            addPiece('bishop', 'white', 7, 2);
+            addPiece('bishop', 'white', 7, 5);
+            
+            // Ферзи
+            addPiece('queen', 'black', 0, 3);
+            addPiece('queen', 'white', 7, 3);
+            
+            // Короли
+            addPiece('king', 'black', 0, 4);
+            addPiece('king', 'white', 7, 4);
+        }
+
+        function addPiece(type, color, row, col) {
+            const piece = createPiece(type, color, row, col);
+            scene.add(piece);
+            pieces.push(piece);
+            board[row][col].piece = piece;
+            return piece;
+        }
+
+        // Определение возможных ходов (упрощённая версия)
+        function getPossibleMoves(piece) {
+            const moves = [];
+            const { type, color, row, col } = piece.userData;
+            
+            // Базовая логика ходов (требует расширения для полной реализации правил)
+            switch(type) {
+                case 'pawn':
+                    const direction = color === 'white' ? -1 : 1;
+                    // Вперёд
+                    if (isValidSquare(row + direction, col) && !board[row + direction][col].piece) {
+                        moves.push({row: row + direction, col: col});
+                        // Двойной ход с начальной позиции
+                        const startRow = color === 'white' ? 6 : 1;
+                        if (row === startRow && !board[row + 2 * direction][col].piece) {
+                            moves.push({row: row + 2 * direction, col: col});
+                        }
+                    }
+                    // Взятие
+                    [[direction, -1], [direction, 1]].forEach(([dr, dc]) => {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (isValidSquare(newRow, newCol) && 
+                            board[newRow][newCol].piece && 
+                            board[newRow][newCol].piece.userData.color !== color) {
+                            moves.push({row: newRow, col: newCol});
+                        }
+                    });
+                    break;
+                    
+                case 'rook':
+                    addLinearMoves(moves, piece, [[1,0], [-1,0], [0,1], [0,-1]]);
+                    break;
+                    
+                case 'knight':
+                    const knightMoves = [
+                        [2,1], [2,-1], [-2,1], [-2,-1],
+                        [1,2], [1,-2], [-1,2], [-1,-2]
+                    ];
+                    knightMoves.forEach(([dr, dc]) => {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (isValidSquare(newRow, newCol)) {
+                            const targetPiece = board[newRow][newCol].piece;
+                            if (!targetPiece || targetPiece.userData.color !== color) {
+                                moves.push({row: newRow, col: newCol});
+                            }
+                        }
+                    });
+                    break;
+                    
+                case 'bishop':
+                    addLinearMoves(moves, piece, [[1,1], [1,-1], [-1,1], [-1,-1]]);
+                    break;
+                    
+                case 'queen':
+                    addLinearMoves(moves, piece, [
+                        [1,0], [-1,0], [0,1], [0,-1],
+                        [1,1], [1,-1], [-1,1], [-1,-1]
+                    ]);
+                    break;
+                    
+                case 'king':
+                    const kingMoves = [
+                        [1,0], [-1,0], [0,1], [0,-1],
+                        [1,1], [1,-1], [-1,1], [-1,-1]
+                    ];
+                    kingMoves.forEach(([dr, dc]) => {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (isValidSquare(newRow, newCol)) {
+                            const targetPiece = board[newRow][newCol].piece;
+                            if (!targetPiece || targetPiece.userData.color !== color) {
+                                moves.push({row: newRow, col: newCol});
+                            }
+                        }
+                    });
+                    break;
+            }
+            
+            return moves;
+        }
+
+        function addLinearMoves(moves, piece, directions) {
+            const { color, row, col } = piece.userData;
+            
+            directions.forEach(([dr, dc]) => {
+                let newRow = row + dr;
+                let newCol = col + dc;
+                
+                while (isValidSquare(newRow, newCol)) {
+                    const targetPiece = board[newRow][newCol].piece;
+                    
+                    if (!targetPiece) {
+                        moves.push({row: newRow, col: newCol});
+                    } else {
+                        if (targetPiece.userData.color !== color) {
+                            moves.push({row: newRow, col: newCol});
+                        }
+                        break;
+                    }
+                    
+                    newRow += dr;
+                    newCol += dc;
+                }
+            });
+        }
+
+        function isValidSquare(row, col) {
+            return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
+        }
+
+        // Обработка клика
+        function onCanvasClick(event) {
+            const mouse = new THREE.Vector2();
+            const rect = renderer.domElement.getBoundingClientRect();
+            
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Проверка клика по фигуре
+            const pieceIntersects = raycaster.intersectObjects(
+                pieces.filter(p => 
+                    p.userData.color === (isWhiteTurn ? 'white' : 'black')
+                ),
+                true
+            );
+            
+            if (pieceIntersects.length > 0) {
+                const piece = pieceIntersects[0].object.parent;
+                selectPiece(piece);
+                return;
+            }
+            
+            // Проверка клика по клетке
+            const squareIntersects = raycaster.intersectObjects(
+                scene.children.flatMap(child => 
+                    child.children ? child.children.filter(c => c.userData?.isSquare) : []
+                ),
+                true
+            );
+            
+            if (squareIntersects.length > 0 && selectedPiece) {
+                const square = squareIntersects[0].object;
+                const targetRow = square.userData.row;
+                const targetCol = square.userData.col;
+                
+                // Проверка, является ли ход допустимым
+                const isValidMove = possibleMoves.some(move => 
+                    move.row === targetRow && move.col === targetCol
+                );
+                
+                if (isValidMove) {
+                    movePiece(selectedPiece, targetRow, targetCol);
+                }
+            }
+        }
+
+        // Выбор фигуры
+        function selectPiece(piece) {
+            clearHighlights();
+            
+            selectedPiece = piece;
+            
+            // Подсветка выбранной фигуры
+            const highlightGeometry = new THREE.RingGeometry(0.4, 0.45, 32);
+            const highlightMaterial = new THREE.MeshBasicMaterial({ 
+                color: colors.highlight, 
+                side: THREE.DoubleSide 
+            });
+            const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+            highlight.rotation.x = -Math.PI / 2;
+            highlight.position.set(
+                piece.position.x,
+                0.1,
+                piece.position.z
+            );
+            highlight.userData.isHighlight = true;
+            scene.add(highlight);
+            
+            // Показать возможные ходы
+            possibleMoves = getPossibleMoves(piece);
+            
+            possibleMoves.forEach(move => {
+                const moveGeometry = new THREE.RingGeometry(0.4, 0.45, 32);
+                const moveMaterial = new THREE.MeshBasicMaterial({ 
+                    color: colors.possibleMove, 
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const moveHighlight = new THREE.Mesh(moveGeometry, moveMaterial);
+                moveHighlight.rotation.x = -Math.PI / 2;
+                moveHighlight.position.set(
+                    move.col * squareSize,
+                    0.11,
+                    move.row * squareSize
+                );
+                moveHighlight.userData.isHighlight = true;
+                scene.add(moveHighlight);
+            });
+            
+            updateStatus(`Выбрана ${getPieceName(piece.userData.type)}. Возможных ходов: ${possibleMoves.length}`);
+        }
+
+        // Перемещение фигуры
+        function movePiece(piece, targetRow, targetCol) {
+            const { row: startRow, col: startCol, type, color } = piece.userData;
+            
+            // Запись хода в историю
+            moveHistory.push({
+                piece: piece,
+                from: { row: startRow, col: startCol },
+                to: { row: targetRow, col: targetCol },
+                captured: board[targetRow][targetCol].piece
+            });
+            
+            // Удаление съеденной фигуры
+            if (board[targetRow][targetCol].piece) {
+                const capturedPiece = board[targetRow][targetCol].piece;
+                scene.remove(capturedPiece);
+                pieces = pieces.filter(p => p !== capturedPiece);
+            }
+            
+            // Обновление доски
+            board[startRow][startCol].piece = null;
+            board[targetRow][targetCol].piece = piece;
+            
+            // Обновление позиции фигуры
+            piece.position.set(
+                targetCol * squareSize,
+                piece.position.y,
+                targetRow * squareSize
+            );
+            piece.userData.row = targetRow;
+            piece.userData.col = targetCol;
+            
+            // Добавление хода в список
+            const moveNotation = `${String.fromCharCode(97 + startCol)}${8 - startRow} → ${String.fromCharCode(97 + targetCol)}${8 - targetRow}`;
+            addMoveToHistory(`${color === 'white' ? 'Белые' : 'Чёрные'}: ${getPieceName(type)} ${moveNotation}`);
+            
+            // Смена хода
+            isWhiteTurn = !isWhiteTurn;
+            
+            // Очистка выделений
+            clearHighlights();
+            selectedPiece = null;
+            possibleMoves = [];
+            
+            updateStatus(`Ход ${isWhiteTurn ? 'белых' : 'чёрных'}`);
+            
+            // Проверка на шах/мат (нужно реализовать)
+            // checkGameStatus();
+        }
+
+        // Очистка подсветки
+        function clearHighlights() {
+            scene.children.forEach(child => {
+                if (child.userData?.isHighlight) {
+                    scene.remove(child);
+                }
+            });
+        }
+
+        // Добавление хода в историю
+        function addMoveToHistory(moveText) {
+            const movesList = document.getElementById('movesList');
+            const moveItem = document.createElement('div');
+            moveItem.className = 'move-item';
+            moveItem.textContent = `${moveHistory.length}. ${moveText}`;
+            movesList.appendChild(moveItem);
+            movesList.scrollTop = movesList.scrollHeight;
+        }
+
+        // Обновление статуса
+        function updateStatus(text) {
+            document.getElementById('status').textContent = text;
+        }
+
+        // Получение имени фигуры
+        function getPieceName(type) {
+            const names = {
+                pawn: 'Пешка',
+                rook: 'Ладья',
+                knight: 'Конь',
+                bishop: 'Слон',
+                queen: 'Ферзь',
+                king: 'Король'
+            };
+            return names[type] || type;
+        }
+
+        // Новая игра
+        function newGame() {
+            // Удаление старых фигур
+            pieces.forEach(piece => scene.remove(piece));
+            pieces = [];
+            
+            // Очистка истории
+            moveHistory = [];
+            document.getElementById('movesList').innerHTML = '';
+            
+            // Сброс доски
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    board[row][col].piece = null;
+                }
+            }
+            
+            // Очистка выделений
+            clearHighlights();
+            selectedPiece = null;
+            possibleMoves = [];
+            
+            // Новая игра
+            setupPieces();
+            isWhiteTurn = true;
+            updateStatus('Новая игра. Ход белых');
+        }
+
+        // Отмена хода
+        function undoMove() {
+            if (moveHistory.length === 0) return;
+            
+            const lastMove = moveHistory.pop();
+            const { piece, from, to, captured } = lastMove;
+            
+            // Возврат фигуры на исходную позицию
+            board[to.row][to.col].piece = null;
+            board[from.row][from.col].piece = piece;
+            
+            piece.position.set(
+                from.col * squareSize,
+                piece.position.y,
+                from.row * squareSize
+            );
+            piece.userData.row = from.row;
+            piece.userData.col = from.col;
+            
+            // Восстановление съеденной фигуры
+            if (captured) {
+                scene.add(captured);
+                pieces.push(captured);
+                board[to.row][to.col].piece = captured;
+            }
+            
+            // Смена хода обратно
+            isWhiteTurn = !isWhiteTurn;
+            
+            // Очистка выделений
+            clearHighlights();
+            selectedPiece = null;
+            possibleMoves = [];
+            
+            // Удаление из истории
+            const movesList = document.getElementById('movesList');
+            movesList.removeChild(movesList.lastChild);
+            
+            updateStatus(`Отменён ход. Ход ${isWhiteTurn ? 'белых' : 'чёрных'}`);
+        }
+
+        // Смена вида
+        function switchView() {
+            if (camera.position.y > 10) {
+                camera.position.set(3.5, 5, 10);
+            } else {
+                camera.position.set(10, 12, 10);
+            }
+            camera.lookAt(3.5, 0, 3.5);
+        }
+
+        // Сброс камеры
+        function resetCamera() {
+            camera.position.set(10, 12, 10);
+            camera.lookAt(3.5, 0, 3.5);
+            controls.reset();
+        }
+
+        // Анимация
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Изменение размера окна
+        function onWindowResize() {
+            const container = document.getElementById('boardContainer');
+            camera.aspect = container.offsetWidth / container.offsetHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+        }
+
+        // Запуск при загрузке
+        window.onload = function() {
+            init();
+            updateStatus('Ход белых. Выберите фигуру.');
+        };
+    </script>
+</body>
+</html>

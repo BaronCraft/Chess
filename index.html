@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ИИ с памятью и контекстом</title>
+    <title>Умный ИИ с осмысленными ответами</title>
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
         }
         
         body {
-            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
             min-height: 100vh;
             padding: 20px;
             display: flex;
@@ -23,130 +23,89 @@
         
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 900px;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 95vh;
+            height: 90vh;
         }
         
         header {
-            background: linear-gradient(90deg, #2c3e50, #4a6491);
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
             color: white;
             padding: 25px;
             text-align: center;
-            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         h1 {
             font-size: 32px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
         
         .subtitle {
             font-size: 16px;
             opacity: 0.9;
+            font-weight: 400;
         }
         
-        .memory-indicator {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            background: rgba(255, 255, 255, 0.2);
+        .quality-indicator {
+            margin-top: 15px;
             padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 20px;
             font-size: 14px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            cursor: help;
         }
         
-        .memory-dot {
-            width: 10px;
-            height: 10px;
+        .quality-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #4CAF50;
             animation: pulse 2s infinite;
         }
         
         @keyframes pulse {
-            0% { opacity: 0.5; }
-            50% { opacity: 1; }
-            100% { opacity: 0.5; }
-        }
-        
-        .mode-selector {
-            background: #f5f7fa;
-            padding: 15px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .mode-btn {
-            padding: 10px 20px;
-            background: white;
-            color: #2c3e50;
-            border: 2px solid #2c3e50;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .mode-btn.active {
-            background: #2c3e50;
-            color: white;
-            transform: scale(1.05);
-        }
-        
-        .mode-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.2);
+            0% { opacity: 0.5; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 0.5; transform: scale(0.95); }
         }
         
         .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 25px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            background: #fafafa;
+            gap: 16px;
+            background: #f8fafc;
         }
         
         .message {
-            max-width: 80%;
-            padding: 15px 20px;
+            max-width: 85%;
+            padding: 18px 22px;
             border-radius: 18px;
             line-height: 1.5;
             position: relative;
-            animation: fadeInUp 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
         
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .user-message {
             align-self: flex-end;
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
             color: white;
             border-bottom-right-radius: 5px;
         }
@@ -154,42 +113,30 @@
         .ai-message {
             align-self: flex-start;
             background: white;
-            color: #333;
-            border: 1px solid #e0e0e0;
+            color: #1a1a1a;
             border-bottom-left-radius: 5px;
+            border-left: 4px solid #2a5298;
         }
         
-        .context-message {
-            align-self: center;
-            background: #e8f5e9;
-            border: 1px solid #c8e6c9;
-            color: #2e7d32;
-            font-size: 13px;
-            padding: 8px 15px;
-            max-width: 90%;
-            text-align: center;
-            border-radius: 12px;
-            margin: 5px 0;
-            animation: slideIn 0.5s ease;
+        .ai-message strong {
+            color: #1e3c72;
+            font-weight: 600;
         }
         
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .ai-message ul, .ai-message ol {
+            margin: 10px 0 10px 20px;
+        }
+        
+        .ai-message li {
+            margin-bottom: 5px;
         }
         
         .message-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
-            font-size: 13px;
+            margin-bottom: 10px;
+            font-size: 14px;
         }
         
         .message-sender {
@@ -203,7 +150,7 @@
         
         .message-time {
             color: #888;
-            font-size: 11px;
+            font-size: 12px;
         }
         
         .user-message .message-time {
@@ -215,23 +162,23 @@
             align-self: flex-start;
             background: white;
             border-radius: 18px;
-            padding: 12px 18px;
-            width: 65px;
+            padding: 15px 20px;
+            width: 70px;
             margin-bottom: 5px;
-            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         
         .typing-dots {
             display: flex;
             justify-content: center;
-            gap: 4px;
+            gap: 5px;
         }
         
         .typing-dot {
-            width: 8px;
-            height: 8px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
-            background: #4a6491;
+            background: #2a5298;
             animation: typing 1.4s infinite ease-in-out;
         }
         
@@ -239,113 +186,96 @@
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         
         @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-            40% { transform: scale(1); opacity: 1; }
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
+            40% { transform: scale(1.2); opacity: 1; }
         }
         
         .input-container {
-            padding: 15px;
-            border-top: 1px solid #e0e0e0;
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
             background: white;
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            align-items: flex-end;
         }
         
         .message-input {
             flex: 1;
-            padding: 12px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 50px;
+            padding: 14px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
             font-size: 15px;
-            transition: all 0.3s;
+            transition: all 0.2s;
             resize: none;
-            height: 50px;
+            height: 56px;
             font-family: inherit;
+            line-height: 1.4;
         }
         
         .message-input:focus {
             outline: none;
-            border-color: #4a6491;
-            box-shadow: 0 0 0 3px rgba(74, 100, 145, 0.1);
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
         }
         
         .send-btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
             color: white;
             border: none;
-            border-radius: 50px;
+            border-radius: 16px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            min-width: 120px;
+            transition: all 0.2s;
+            min-width: 100px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .send-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(44, 62, 80, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.25);
         }
         
         .send-btn:active {
             transform: translateY(0);
         }
         
-        .memory-panel {
-            background: #f8f9fa;
-            padding: 15px;
-            border-top: 1px solid #e0e0e0;
-            font-size: 13px;
-            color: #555;
-            max-height: 150px;
-            overflow-y: auto;
-            display: none;
+        .send-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         
-        .memory-panel.active {
-            display: block;
-        }
-        
-        .memory-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
+        .examples {
+            background: #f8fafc;
+            padding: 15px 25px;
+            border-top: 1px solid #e5e7eb;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .memory-content {
-            font-size: 12px;
-            line-height: 1.4;
-        }
-        
-        .memory-item {
-            background: white;
-            padding: 8px 10px;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            border-left: 3px solid #4a6491;
-        }
-        
-        .controls {
-            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-top: 10px;
+            justify-content: center;
         }
         
-        .control-btn {
-            padding: 6px 12px;
-            background: #e9ecef;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 12px;
+        .example-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #374151;
             cursor: pointer;
             transition: all 0.2s;
         }
         
-        .control-btn:hover {
-            background: #dee2e6;
+        .example-btn:hover {
+            background: #f3f4f6;
+            border-color: #2a5298;
+            color: #1e3c72;
         }
         
         @media (max-width: 768px) {
@@ -366,33 +296,38 @@
                 width: 100%;
             }
         }
+        
+        .thinking {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 8px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ИИ с контекстной памятью</h1>
-            <div class="subtitle">Запоминает беседу и понимает контекст диалога</div>
-            <div class="memory-indicator" id="memoryIndicator" title="Память ИИ активна">
-                <div class="memory-dot"></div>
-                <span>Контекст активен</span>
+            <h1>Умный ИИ собеседник</h1>
+            <div class="subtitle">Даёт конкретные ответы без лишних слов</div>
+            <div class="quality-indicator">
+                <div class="quality-dot"></div>
+                <span>Высокая точность ответов</span>
             </div>
         </header>
-        
-        <div class="mode-selector">
-            <button class="mode-btn active" data-mode="chat">Обычный чат</button>
-            <button class="mode-btn" data-mode="deep">Глубокий анализ</button>
-            <button class="mode-btn" data-mode="emotional">Эмоциональный</button>
-            <button class="mode-btn" data-mode="logical">Логический</button>
-        </div>
         
         <div class="chat-container" id="chatContainer">
             <div class="message ai-message">
                 <div class="message-header">
-                    <div class="message-sender">ИИ с памятью</div>
+                    <div class="message-sender">Умный ИИ</div>
                     <div class="message-time" id="currentTime"></div>
                 </div>
-                Привет! Я ИИ, который запоминает наш разговор. Можем обсудить что угодно - я буду помнить контекст и ссылаться на предыдущие темы. Расскажите, как вас зовут и чем вы интересуетесь?
+                <strong>Привет! Я ИИ, который даёт конкретные и осмысленные ответы.</strong><br><br>
+                • Отвечаю по существу, без "воды"<br>
+                • Привожу факты и примеры<br>
+                • Даю практические советы<br>
+                • Объясняю сложные темы простыми словами<br><br>
+                Задайте любой вопрос — я отвечу максимально информативно.
             </div>
         </div>
         
@@ -404,20 +339,18 @@
             </div>
         </div>
         
-        <div class="memory-panel" id="memoryPanel">
-            <div class="memory-title">
-                <span>Память ИИ</span>
-                <button class="control-btn" id="clearMemory">Очистить память</button>
-            </div>
-            <div class="memory-content" id="memoryContent">
-                <!-- Здесь будет отображаться память ИИ -->
-            </div>
+        <div class="examples">
+            <button class="example-btn" data-example="как выучить английский быстро">Как выучить английский быстро?</button>
+            <button class="example-btn" data-example="объясни квантовую физику просто">Объясни квантовую физику</button>
+            <button class="example-btn" data-example="как начать заниматься спортом">Как начать заниматься спортом?</button>
+            <button class="example-btn" data-example="что такое блокчейн">Что такое блокчейн?</button>
+            <button class="example-btn" data-example="как улучшить продуктивность">Как улучшить продуктивность?</button>
         </div>
         
         <div class="input-container">
-            <textarea class="message-input" id="userInput" placeholder="Введите ваше сообщение... (Enter для отправки, Shift+Enter для новой строки)" autocomplete="off"></textarea>
+            <textarea class="message-input" id="userInput" placeholder="Задайте конкретный вопрос... (Enter для отправки, Shift+Enter для новой строки)" autocomplete="off"></textarea>
             <button class="send-btn" id="sendButton">
-                <span>Отправить</span>
+                Отправить
             </button>
         </div>
     </div>
@@ -428,243 +361,335 @@
             const userInput = document.getElementById('userInput');
             const sendButton = document.getElementById('sendButton');
             const typingIndicator = document.getElementById('typingIndicator');
-            const memoryPanel = document.getElementById('memoryPanel');
-            const memoryContent = document.getElementById('memoryContent');
-            const memoryIndicator = document.getElementById('memoryIndicator');
-            const clearMemoryBtn = document.getElementById('clearMemory');
-            const modeButtons = document.querySelectorAll('.mode-btn');
+            const exampleButtons = document.querySelectorAll('.example-btn');
             
-            // Система памяти ИИ
-            class AIMemory {
-                constructor() {
-                    this.conversationHistory = [];
-                    this.userInfo = {};
-                    this.discussedTopics = new Set();
-                    this.recentContext = [];
-                    this.emotionalState = 'neutral';
-                    this.maxContextSize = 10;
-                    this.memoryEnabled = true;
-                }
-                
-                addMessage(sender, text, metadata = {}) {
-                    const message = {
-                        id: Date.now(),
-                        sender,
-                        text,
-                        timestamp: new Date().toISOString(),
-                        ...metadata
-                    };
-                    
-                    this.conversationHistory.push(message);
-                    
-                    // Обновляем контекст
-                    if (sender === 'user') {
-                        this.updateContext(text);
-                        this.extractUserInfo(text);
-                        this.identifyTopics(text);
-                    }
-                    
-                    // Сохраняем в localStorage
-                    this.saveToStorage();
-                    
-                    return message;
-                }
-                
-                updateContext(userMessage) {
-                    this.recentContext.push(userMessage);
-                    if (this.recentContext.length > this.maxContextSize) {
-                        this.recentContext.shift();
-                    }
-                }
-                
-                extractUserInfo(text) {
-                    const lowerText = text.toLowerCase();
-                    
-                    // Извлечение имени
-                    const nameMatch = lowerText.match(/(?:меня зовут|я|мое имя)[\s,]+([а-яё]{2,20})/i);
-                    if (nameMatch && !this.userInfo.name) {
-                        this.userInfo.name = nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1);
-                    }
-                    
-                    // Извлечение интересов
-                    if (lowerText.includes('интерес') || lowerText.includes('нравится') || lowerText.includes('люблю')) {
-                        const interests = ['книги', 'фильмы', 'музыка', 'спорт', 'наука', 'техника', 'путешествия', 'искусство']
-                            .filter(interest => lowerText.includes(interest));
-                        if (interests.length > 0) {
-                            this.userInfo.interests = [...new Set([...(this.userInfo.interests || []), ...interests])];
-                        }
-                    }
-                    
-                    // Извлечение настроения
-                    const positiveWords = ['хорошо', 'отлично', 'прекрасно', 'рад', 'счастлив', 'восторг'];
-                    const negativeWords = ['плохо', 'грустно', 'устал', 'разочарован', 'злюсь', 'беспокоюсь'];
-                    
-                    if (positiveWords.some(word => lowerText.includes(word))) {
-                        this.userInfo.mood = 'positive';
-                    } else if (negativeWords.some(word => lowerText.includes(word))) {
-                        this.userInfo.mood = 'negative';
-                    }
-                }
-                
-                identifyTopics(text) {
-                    const topics = {
-                        'работа': ['работа', 'проект', 'задача', 'коллеги', 'начальник'],
-                        'учёба': ['учеба', 'университет', 'школа', 'экзамен', 'зачет'],
-                        'отношения': ['друг', 'подруга', 'парень', 'девушка', 'любовь', 'семья'],
-                        'хобби': ['хобби', 'увлечение', 'занимаюсь', 'в свободное время'],
-                        'планы': ['планирую', 'хочу', 'мечтаю', 'цель', 'будущее']
-                    };
-                    
-                    for (const [topic, keywords] of Object.entries(topics)) {
-                        if (keywords.some(keyword => text.toLowerCase().includes(keyword))) {
-                            this.discussedTopics.add(topic);
-                        }
-                    }
-                }
-                
-                getContextSummary() {
-                    const summary = [];
-                    
-                    if (this.userInfo.name) {
-                        summary.push(`Пользователь: ${this.userInfo.name}`);
-                    }
-                    
-                    if (this.userInfo.interests && this.userInfo.interests.length > 0) {
-                        summary.push(`Интересы: ${this.userInfo.interests.join(', ')}`);
-                    }
-                    
-                    if (this.discussedTopics.size > 0) {
-                        summary.push(`Обсуждаемые темы: ${Array.from(this.discussedTopics).join(', ')}`);
-                    }
-                    
-                    if (this.recentContext.length > 0) {
-                        const lastContext = this.recentContext.slice(-3);
-                        summary.push(`Последний контекст: ${lastContext.join(' | ')}`);
-                    }
-                    
-                    return summary;
-                }
-                
-                getConversationContext(lastMessages = 5) {
-                    const recentMessages = this.conversationHistory.slice(-lastMessages);
-                    return recentMessages.map(msg => `${msg.sender}: ${msg.text}`).join('\n');
-                }
-                
-                saveToStorage() {
-                    const memoryData = {
-                        userInfo: this.userInfo,
-                        discussedTopics: Array.from(this.discussedTopics),
-                        recentContext: this.recentContext,
-                        conversationCount: this.conversationHistory.length
-                    };
-                    localStorage.setItem('aiMemory', JSON.stringify(memoryData));
-                }
-                
-                loadFromStorage() {
-                    const saved = localStorage.getItem('aiMemory');
-                    if (saved) {
-                        try {
-                            const data = JSON.parse(saved);
-                            this.userInfo = data.userInfo || {};
-                            this.discussedTopics = new Set(data.discussedTopics || []);
-                            this.recentContext = data.recentContext || [];
-                            
-                            // Показываем память
-                            this.updateMemoryDisplay();
-                            memoryPanel.classList.add('active');
-                            
-                            return true;
-                        } catch (e) {
-                            console.error('Ошибка загрузки памяти:', e);
-                        }
-                    }
-                    return false;
-                }
-                
-                clear() {
-                    this.conversationHistory = [];
-                    this.userInfo = {};
-                    this.discussedTopics.clear();
-                    this.recentContext = [];
-                    localStorage.removeItem('aiMemory');
-                    this.updateMemoryDisplay();
-                }
-                
-                updateMemoryDisplay() {
-                    const summary = this.getContextSummary();
-                    memoryContent.innerHTML = summary.length > 0 
-                        ? summary.map(item => `<div class="memory-item">${item}</div>`).join('')
-                        : '<div class="memory-item">Память пуста. Начните диалог!</div>';
-                }
-            }
-            
-            // Инициализация памяти
-            const aiMemory = new AIMemory();
-            
-            // Загрузка сохранённой памяти
-            if (aiMemory.loadFromStorage()) {
-                addContextMessage('Восстановлена предыдущая беседа из памяти ИИ');
-            }
-            
-            // Режимы работы ИИ
-            const aiModes = {
-                chat: {
-                    name: 'ИИ-собеседник',
-                    greeting: 'Давайте продолжим наш разговор. Я помню, о чем мы говорили ранее.',
-                    responseStyle: 'conversational'
+            // База знаний с конкретной информацией
+            const knowledgeBase = {
+                programming: {
+                    "javascript vs python": `
+<strong>JavaScript vs Python — ключевые различия:</strong><br><br>
+<strong>JavaScript:</strong>
+• Для веб-разработки (фронтенд и Node.js бэкенд)
+• Асинхронный по умолчанию, событийно-ориентированный
+• Слабая типизация, динамический язык
+• Лучше для: веб-приложений, UI, real-time приложений<br><br>
+
+<strong>Python:</strong>
+• Для науки о данных, ML, автоматизации
+• Синхронный по умолчанию (есть async/await)
+• Сильная, но динамическая типизация
+• Лучше для: анализа данных, скриптов, бэкенда (Django, Flask)<br><br>
+
+<strong>Вывод:</strong> Для веба — JavaScript, для данных/автоматизации — Python.
+                    `,
+                    "как начать программировать": `
+<strong>С чего начать программирование:</strong><br><br>
+1. <strong>Выберите язык:</strong>
+   • Для веба: HTML/CSS → JavaScript
+   • Для общего: Python
+   • Для мобильных: Kotlin (Android) или Swift (iOS)<br><br>
+
+2. <strong>Практика важнее теории:</strong>
+   • Codecademy, freeCodeCamp для основ
+   • LeetCode для алгоритмов (после основ)
+   • Свой проект с 1-го месяца<br><br>
+
+3. <strong>Ключевые навыки:</strong>
+   • Git и GitHub
+   • Чтение документации
+   • Понимание алгоритмов (O-нотация)
+   • Основы баз данных (SQL)<br><br>
+
+<strong>Первые 3 месяца:</strong> Основы языка → Небольшой проект → Изучение Git → Профиль на GitHub.
+                    `
                 },
-                deep: {
-                    name: 'Аналитик ИИ',
-                    greeting: 'Анализирую контекст нашей беседы. Готов к глубокому обсуждению.',
-                    responseStyle: 'analytical'
+                science: {
+                    "квантовая физика просто": `
+<strong>Квантовая физика простыми словами:</strong><br><br>
+<strong>Основные идеи:</strong><br>
+1. <strong>Квантование:</strong> Энергия существует дискретными порциями (квантами), а не непрерывно.<br>
+2. <strong>Дуализм волна-частица:</strong> Электроны ведут себя и как частицы, и как волны.<br>
+3. <strong>Принцип неопределенности:</strong> Нельзя одновременно точно измерить и положение, и скорость частицы.<br><br>
+
+<strong>Практические применения:</strong>
+• Лазеры (стимулированное излучение)
+• Транзисторы и вся микроэлектроника
+• МРТ в медицине
+• Квантовые компьютеры (в разработке)<br><br>
+
+<strong>Простая аналогия:</strong> Представьте, что вы можете быть в двух местах одновременно, но как только кто-то смотрит на вас, вы "выбираете" одно место.
+                    `,
+                    "что такое черная дыра": `
+<strong>Чёрные дыры — основные факты:</strong><br><br>
+<strong>Что это:</strong> Область пространства-времени с гравитацией такой силы, что ничто, даже свет, не может её покинуть.<br><br>
+
+<strong>Как образуются:</strong>
+1. Массивные звёзды (в 20+ раз тяжелее Солнца)
+2. Звезда сжигает всё топливо
+3. Гравитация побеждает, ядро коллапсирует
+4. Образуется сингулярность с горизонтом событий<br><br>
+
+<strong>Типы чёрных дыр:</strong>
+• <strong>Звёздные:</strong> 3-20 масс Солнца
+• <strong>Сверхмассивные:</strong> Миллионы/миллиарды масс Солнца (в центрах галактик)
+• <strong>Промежуточные:</strong> 100-1000 масс Солнца (редкие)<br><br>
+
+<strong>Интересно:</strong> Чёрные дыры испаряются (излучение Хокинга), но очень медленно.
+                    `
                 },
-                emotional: {
-                    name: 'Эмоциональный ИИ',
-                    greeting: 'Чувствую контекст нашего разговора. Готов обсудить это на эмоциональном уровне.',
-                    responseStyle: 'emotional'
+                education: {
+                    "как выучить английский быстро": `
+<strong>Эффективное изучение английского:</strong><br><br>
+<strong>1. Иммерсивный подход (самый эффективный):</strong>
+• Смотрите сериалы на английском с английскими субтитрами
+• Слушайте подкасты (BBC, NPR для уровня intermediate+)
+• Переведите телефон/соцсети на английский<br><br>
+
+<strong>2. Систематическое обучение:</strong>
+• <strong>Грамматика:</strong> English Grammar in Use (красная книга)
+• <strong>Слова:</strong> Anki или Quizlet (30 слов/день)
+• <strong>Произношение:</strong> YouTube-каналы (Rachel's English, English with Lucy)<br><br>
+
+<strong>3. Практика каждый день:</strong>
+• Говорите сами с собой (описывайте свои действия)
+• Найдите tandem-партнёра (Tandem, HelloTalk)
+• Пишите по 5 предложений в день в дневнике<br><br>
+
+<strong>Результат:</strong> За 3-6 месяцев можно достичь B1-B2 при занятиях 1-2 часа в день.
+                    `,
+                    "как учиться эффективно": `
+<strong>Методы эффективного обучения:</strong><br><br>
+<strong>1. Метод Фейнмана:</strong>
+• Объясните тему простыми словами (как ребёнку)
+• Определите пробелы в понимании
+• Упростите и используйте аналогии
+• Повторите и углубите<br><br>
+
+<strong>2. Интервальные повторения (Anki):</strong>
+• 1 день → 7 дней → 16 дней → 35 дней
+• Оптимально для запоминания фактов<br><br>
+
+<strong>3. Активное vs пассивное обучение:</strong>
+• <strong>Пассивное:</strong> Чтение, просмотр (10% удержание)
+• <strong>Активное:</strong> Практика, объяснение, тестирование (75-90% удержание)<br><br>
+
+<strong>4. Практические советы:</strong>
+• Учитесь 25 минут, отдыхайте 5 (метод Pomodoro)
+• Спите 7-8 часов (консолидация памяти во сне)
+• Пейте воду и двигайтесь каждые 45 минут
+                    `
                 },
-                logical: {
-                    name: 'Логический ИИ',
-                    greeting: 'Анализирую логические связи в нашей беседе. Готов к структурированному диалогу.',
-                    responseStyle: 'logical'
+                health: {
+                    "как начать заниматься спортом": `
+<strong>Начать заниматься спортом правильно:</strong><br><br>
+<strong>1. Начинайте постепенно:</strong>
+• Неделя 1: 10-15 минут ходьбы/лёгких упражнений 3 раза
+• Неделя 2: 20 минут, добавить силовые (приседания, отжимания)
+• Неделя 3-4: 30 минут 4 раза в неделю<br><br>
+
+<strong>2. Выберите подходящее:</strong>
+• <strong>Для силы:</strong> Базовые упражнения (приседания, тяги, жимы)
+• <strong>Для выносливости:</strong> Бег, плавание, велосипед
+• <strong>Для гибкости:</strong> Йога, стретчинг<br><br>
+
+<strong>3. Ключевые принципы:</strong>
+• <strong>Консистентность важнее интенсивности</strong>
+• Отслеживайте прогресс (дневник тренировок)
+• Восстанавливайтесь (сон 7-8 часов, питание)<br><br>
+
+<strong>Первые результаты:</strong> Через 3-4 недели регулярных занятий.
+                    `,
+                    "как правильно питаться": `
+<strong>Основы правильного питания:</strong><br><br>
+<strong>1. Баланс макронутриентов:</strong>
+• <strong>Белки:</strong> 1.6-2.2 г/кг (мясо, рыба, яйца, тофу)
+• <strong>Углеводы:</strong> 3-5 г/кг (крупы, овощи, фрукты)
+• <strong>Жиры:</strong> 0.8-1 г/кг (орехи, авокадо, оливковое масло)<br><br>
+
+<strong>2. Качество важнее калорий:</strong>
+• Минимизируйте переработанные продукты
+• Ешьте овощи (500+ г/день разных цветов)
+• Пейте воду (30 мл/кг веса)<br><br>
+
+<strong>3. Практические советы:</strong>
+• Готовьте сами (контроль ингредиентов)
+• Ешьте медленно (20 минут на приём пищи)
+• Не исключайте полностью "вредное" (приводит к срывам)
+• Слушайте голод (ешьте при голоде, останавливайтесь при сытости)
+                    `
+                },
+                technology: {
+                    "что такое блокчейн": `
+<strong>Блокчейн простыми словами:</strong><br><br>
+<strong>Что это:</strong> Децентрализованная цифровая книга учёта, где записи (блоки) связаны в цепочку и защищены криптографией.<br><br>
+
+<strong>Как работает:</strong>
+1. Транзакция создаётся
+2. Проверяется сетью узлов (нод)
+3. Добавляется в блок с другими транзакциями
+4. Блок добавляется в цепочку (неизменно)<br><br>
+
+<strong>Ключевые свойства:</strong>
+• <strong>Децентрализация:</strong> Нет центрального контролёра
+• <strong>Неизменность:</strong> Записанное нельзя изменить
+• <strong>Прозрачность:</strong> Все видят все транзакции
+• <strong>Безопасность:</strong> Криптография + распределённость<br><br>
+
+<strong>Применения кроме криптовалют:</strong>
+• Цепочки поставок (отслеживание товаров)
+• Цифровые удостоверения
+• Умные контракты (автоисполняемый код)
+• Голосование
+                    `,
+                    "искусственный интеллект объяснить просто": `
+<strong>Искусственный интеллект — просто о сложном:</strong><br><br>
+<strong>Что это:</strong> Системы, которые выполняют задачи, обычно требующие человеческого интеллекта.<br><br>
+
+<strong>Основные типы:</strong>
+1. <strong>Слабый (узкий) ИИ:</strong> Решает одну задачу
+   • Распознавание лиц (Face ID)
+   • Рекомендации (Netflix, YouTube)
+   • Переводчик (Google Translate)<br><br>
+
+2. <strong>Сильный (общий) ИИ:</strong> Решает любые задачи (пока гипотетический)<br><br>
+
+<strong>Как работает машинное обучение:</strong>
+• <strong>Данные:</strong> Много примеров (изображения, текст)
+• <strong>Модель:</strong> Алгоритм, который находит паттерны
+• <strong>Обучение:</strong> Настройка модели на данных
+• <strong>Предсказание:</strong> Применение к новым данным<br><br>
+
+<strong>Современные ИИ (2024):</strong> Большие языковые модели (ChatGPT, Claude), диффузионные модели (DALL-E, Midjourney).
+                    `
+                },
+                productivity: {
+                    "как улучшить продуктивность": `
+<strong>Проверенные методы повышения продуктивности:</strong><br><br>
+<strong>1. Метод Pomodoro:</strong>
+• 25 минут фокуса → 5 минут отдыха
+• После 4 циклов → 15-30 минут перерыва
+• Используйте таймер (не пропускайте перерывы)<br><br>
+
+<strong>2. Система GTD (Getting Things Done):</strong>
+• <strong>Capture:</strong> Соберите все задачи в inbox
+• <strong>Clarify:</strong> Определите следующее действие
+• <strong>Organize:</strong> По проектам и контекстам
+• <strong>Review:</strong> Еженедельный обзор
+• <strong>Engage:</strong> Выполняйте<br><br>
+
+<strong>3. Глубокий фокос vs shallow work:</strong>
+• <strong>Глубокий:</strong> 3-4 часа утром на сложные задачи
+• <strong>Мелкий:</strong> Остальное время на email, встречи<br><br>
+
+<strong>4. Технические инструменты:</strong>
+• Notion или Obsidian для организации
+• RescueTime для отслеживания времени
+• Focusmate для accountability
+                    `,
+                    "как перестать прокрастинировать": `
+<strong>Борьба с прокрастинацией:</strong><br><br>
+<strong>1. Техника "всего 5 минут":</strong>
+• Начните задачу на 5 минут (после этого проще продолжить)<br><br>
+
+<strong>2. Разбейте на микрозадачи:</strong>
+• Вместо "написать статью" → "написать заголовок", "написать первый абзац"<br><br>
+
+<strong>3. Устраните триггеры прокрастинации:</strong>
+• Блокировщики сайтов (Cold Turkey, Freedom)
+• Отключите уведомления
+• Рабочее окружение без отвлекающих факторов<br><br>
+
+<strong>4. Понимание причин:</strong>
+• Страх неудачи → Начните с "черновика"
+• Перфекционизм → "Достаточно хорошо" вместо "идеально"
+• Сложность → Разбейте на шаги
+• Скука → Сделайте задачу интереснее (музыка, таймер)
+                    `
                 }
             };
             
-            let currentMode = 'chat';
+            // Общие ответы для других тем
+            const generalResponses = {
+                философия: `
+<strong>Основные философские школы:</strong><br><br>
+<strong>1. Стоицизм (Сенека, Марк Аврелий):</strong>
+• Контролируй то, что можешь, принимай то, что не можешь
+• Разделение на контролируемое/неконтролируемое
+• Практика негативной визуализации<br><br>
+
+<strong>2. Экзистенциализм (Сартр, Камю):</strong>
+• Существование предшествует сущности
+• Человек свободен и ответственен за свой выбор
+• Абсурдность бытия и поиск смысла<br><br>
+
+<strong>3. Утилитаризм (Бентам, Милль):</strong>
+• Наибольшее счастье для наибольшего числа людей
+• Последствия действий важнее намерений
+• Количественный подход к этике
+                `,
+                психология: `
+<strong>Практическая психология для жизни:</strong><br><br>
+<strong>1. Когнитивные искажения:</strong>
+• <strong>Подтверждающее искажение:</strong> Ищем подтверждение своим убеждениям
+• <strong>Эффект Даннинга-Крюгера:</strong> Невежды переоценивают, эксперты недооценивают себя
+• <strong>Ошибка выжившего:</strong> Судим по успехам, игнорируя неудачи<br><br>
+
+<strong>2. Методы регуляции эмоций:</strong>
+• <strong>Нейрографика:</strong> Рисование для проработки эмоций
+• <strong>Дневник эмоций:</strong> Записывать триггеры → мысли → чувства
+• <strong>Дыхание 4-7-8:</strong> Вдох 4, задержка 7, выдох 8 (успокаивает нервную систему)<br><br>
+
+<strong>3. Привычки для ментального здоровья:</strong>
+• Цифровой детокс 1 день/неделю
+• Практика благодарности (3 вещи вечером)
+• Социальные связи (качество важнее количества)
+                `,
+                бизнес: `
+<strong>Бизнес-советы с результатом:</strong><br><br>
+<strong>1. MVP (Minimum Viable Product):</strong>
+• Запустите самый простой работающий продукт
+• Собирайте обратную связь сразу
+• Итеративно улучшайте<br><br>
+
+<strong>2. Unit-экономика:</strong>
+• CAC (стоимость привлечения клиента) < LTV (пожизненная ценность)
+• Рассчитайте точку безубыточности
+• Фокус на retention, а не только acquisition<br><br>
+
+<strong>3. Управление временем руководителя:</strong>
+• Делегируйте всё, кроме стратегических решений
+• Блокируйте время для глубокой работы
+• Проводите совещания стоя (сокращает время на 30%)
+                `,
+                отношения: `
+<strong>Осмысленные советы по отношениям:</strong><br><br>
+<strong>1. Коммуникация:</strong>
+• Используйте "Я-сообщения" ("Я чувствую..." вместо "Ты всегда...")
+• Активное слушание (повторяйте своими словами)
+• Регулярные check-in (15 минут в неделю без отвлечений)<br><br>
+
+<strong>2. Разрешение конфликтов:</strong>
+• Фокус на проблеме, а не на личности
+• Ищите компромисс, а не победу
+• Делайте перерывы при эскалации (20 минут минимум)<br><br>
+
+<strong>3. Поддержание связи:</strong>
+• Ритуалы (совместные ужины без телефонов)
+• Разделение интересов (вместе + отдельно)
+• Благодарность и признательность ежедневно
+                `
+            };
             
-            // Установка времени первого сообщения
+            // Время первого сообщения
             document.getElementById('currentTime').textContent = getCurrentTime();
             
-            // Обработчики кнопок режимов
-            modeButtons.forEach(btn => {
+            // Примеры вопросов
+            exampleButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    modeButtons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentMode = this.dataset.mode;
-                    
-                    addAIMessage(`Режим изменен: ${aiModes[currentMode].name}. ${aiModes[currentMode].greeting}`);
-                    
-                    // Показываем память при смене режима
-                    memoryPanel.classList.add('active');
-                    setTimeout(() => {
-                        memoryPanel.classList.remove('active');
-                    }, 5000);
+                    const question = this.dataset.example;
+                    userInput.value = question;
+                    userInput.focus();
                 });
-            });
-            
-            // Очистка памяти
-            clearMemoryBtn.addEventListener('click', function() {
-                if (confirm('Очистить всю память ИИ? Это удалит историю разговора и контекст.')) {
-                    aiMemory.clear();
-                    addContextMessage('Память ИИ очищена. Начнем разговор заново.');
-                    memoryPanel.classList.remove('active');
-                }
-            });
-            
-            // Индикатор памяти
-            memoryIndicator.addEventListener('click', function() {
-                memoryPanel.classList.toggle('active');
-                aiMemory.updateMemoryDisplay();
             });
             
             // Отправка сообщения
@@ -676,41 +701,21 @@
                 }
             });
             
-            // Автофокус
-            userInput.focus();
-            
             function sendMessage() {
                 const message = userInput.value.trim();
                 if (!message) return;
                 
-                // Добавление сообщения пользователя
                 addUserMessage(message);
-                
-                // Добавление в память ИИ
-                aiMemory.addMessage('user', message, { mode: currentMode });
-                
-                // Очистка поля ввода
                 userInput.value = '';
-                userInput.style.height = '50px';
+                userInput.style.height = '56px';
                 
-                // Показать индикатор набора
                 typingIndicator.style.display = 'block';
                 
-                // Обновить отображение памяти
-                aiMemory.updateMemoryDisplay();
-                
-                // Генерация ответа с задержкой
                 setTimeout(() => {
                     typingIndicator.style.display = 'none';
                     const aiResponse = generateAIResponse(message);
                     addAIMessage(aiResponse);
-                    
-                    // Добавление ответа в память
-                    aiMemory.addMessage('ai', aiResponse, { mode: currentMode });
-                    
-                    // Обновить отображение памяти
-                    aiMemory.updateMemoryDisplay();
-                }, 800 + Math.random() * 1200);
+                }, 800 + Math.random() * 800);
             }
             
             function addUserMessage(text) {
@@ -720,7 +725,7 @@
                 const time = getCurrentTime();
                 messageDiv.innerHTML = `
                     <div class="message-header">
-                        <div class="message-sender">${aiMemory.userInfo.name || 'Вы'}</div>
+                        <div class="message-sender">Вы</div>
                         <div class="message-time">${time}</div>
                     </div>
                     ${escapeHtml(text)}
@@ -735,297 +740,62 @@
                 messageDiv.className = 'message ai-message';
                 
                 const time = getCurrentTime();
+                const thinking = getThinkingProcess(text);
+                
                 messageDiv.innerHTML = `
                     <div class="message-header">
-                        <div class="message-sender">${aiModes[currentMode].name}</div>
+                        <div class="message-sender">Умный ИИ</div>
                         <div class="message-time">${time}</div>
                     </div>
-                    ${escapeHtml(text)}
+                    ${text}
+                    ${thinking}
                 `;
                 
                 chatContainer.appendChild(messageDiv);
                 scrollToBottom();
             }
             
-            function addContextMessage(text) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'context-message';
-                messageDiv.innerHTML = `📝 ${text}`;
-                chatContainer.appendChild(messageDiv);
-                scrollToBottom();
-            }
-            
-            function generateAIResponse(userMessage) {
-                // Получаем контекст из памяти
-                const context = aiMemory.getConversationContext(6);
-                const memorySummary = aiMemory.getContextSummary();
-                
-                // Анализируем сообщение пользователя
-                const analysis = analyzeMessage(userMessage, context);
-                
-                // Генерируем ответ на основе режима и контекста
-                let response = '';
-                
-                switch (currentMode) {
-                    case 'deep':
-                        response = generateDeepResponse(userMessage, analysis, memorySummary);
-                        break;
-                    case 'emotional':
-                        response = generateEmotionalResponse(userMessage, analysis, memorySummary);
-                        break;
-                    case 'logical':
-                        response = generateLogicalResponse(userMessage, analysis, memorySummary);
-                        break;
-                    default:
-                        response = generateChatResponse(userMessage, analysis, memorySummary);
-                }
-                
-                return response;
-            }
-            
-            function analyzeMessage(message, context) {
+            function generateAIResponse(message) {
                 const lowerMsg = message.toLowerCase();
-                const analysis = {
-                    isQuestion: /[?]/.test(message),
-                    isPersonal: /(я|меня|мне|мо[ейюя])/i.test(message),
-                    isEmotional: /(чувствую|рад|грустно|сердит|волнуюсь|боюсь)/i.test(message),
-                    topics: [],
-                    needsFollowUp: false,
-                    referencesPrevious: false
-                };
                 
-                // Проверяем ссылки на предыдущие темы
-                if (context) {
-                    const contextLower = context.toLowerCase();
-                    analysis.referencesPrevious = /(раньше|ранее|предыдущ|до этого|в прошлый раз)/i.test(message) ||
-                        /(помнишь|напомни|говорил[иа])/i.test(message);
-                }
-                
-                // Определяем тему
-                const topicKeywords = {
-                    'работа': ['работа', 'проект', 'офис', 'коллеги'],
-                    'учёба': ['учеба', 'универ', 'школа', 'экзамен'],
-                    'отношения': ['друг', 'подруга', 'любовь', 'семья'],
-                    'хобби': ['хобби', 'увлечение', 'занимаюсь'],
-                    'планы': ['планы', 'мечтаю', 'хочу', 'цель'],
-                    'философия': ['смысл', 'жизнь', 'существование', 'философ'],
-                    'технологии': ['техника', 'компьютер', 'смартфон', 'интернет']
-                };
-                
-                for (const [topic, keywords] of Object.entries(topicKeywords)) {
-                    if (keywords.some(keyword => lowerMsg.includes(keyword))) {
-                        analysis.topics.push(topic);
+                // Поиск в базе знаний
+                for (const [category, topics] of Object.entries(knowledgeBase)) {
+                    for (const [topic, answer] of Object.entries(topics)) {
+                        if (lowerMsg.includes(topic)) {
+                            return answer;
+                        }
                     }
                 }
                 
-                // Проверяем, нужен ли follow-up
-                analysis.needsFollowUp = analysis.isPersonal || analysis.isEmotional || analysis.topics.length > 0;
-                
-                return analysis;
-            }
-            
-            function generateChatResponse(message, analysis, memorySummary) {
-                const responses = [];
-                
-                // Если есть имя пользователя, используем его
-                if (aiMemory.userInfo.name) {
-                    responses.push(`${aiMemory.userInfo.name}, `);
-                }
-                
-                // Обработка вопросов
-                if (analysis.isQuestion) {
-                    responses.push(generateAnswerToQuestion(message));
-                } 
-                // Ссылка на предыдущую тему
-                else if (analysis.referencesPrevious && memorySummary.length > 0) {
-                    responses.push(`Да, помню нашу беседу. `);
-                    responses.push(generateContextualFollowUp(message));
-                }
-                // Эмоциональное сообщение
-                else if (analysis.isEmotional) {
-                    responses.push(generateEmotionalSupport(message));
-                }
-                // Личное сообщение
-                else if (analysis.isPersonal) {
-                    responses.push(generatePersonalResponse(message));
-                }
-                // Общий ответ
-                else {
-                    responses.push(generateGeneralResponse(message));
-                }
-                
-                // Добавляем follow-up вопрос
-                if (analysis.needsFollowUp) {
-                    responses.push(' ' + generateFollowUpQuestion(analysis));
-                }
-                
-                // Добавляем контекстную ссылку если нужно
-                if (memorySummary.length > 2 && Math.random() > 0.7) {
-                    responses.push(' ' + generateMemoryReference());
-                }
-                
-                return responses.join('');
-            }
-            
-            function generateDeepResponse(message, analysis, memorySummary) {
-                let response = `Анализирую ваше сообщение: "${message.substring(0, 50)}..."\n\n`;
-                
-                if (analysis.topics.length > 0) {
-                    response += `Тематика: ${analysis.topics.join(', ')}.\n`;
-                }
-                
-                if (memorySummary.length > 0) {
-                    response += `Контекст из памяти: ${memorySummary.join('; ')}.\n\n`;
-                }
-                
-                response += generateThoughtfulResponse(message);
-                
-                if (analysis.needsFollowUp) {
-                    response += '\n' + generateDeepFollowUp();
-                }
-                
-                return response;
-            }
-            
-            function generateEmotionalResponse(message, analysis, memorySummary) {
-                let response = '';
-                
-                if (aiMemory.userInfo.mood === 'positive') {
-                    response = 'Рад, что у вас хорошее настроение! ';
-                } else if (aiMemory.userInfo.mood === 'negative') {
-                    response = 'Понимаю, что вам сейчас непросто. ';
-                }
-                
-                response += generateEmpatheticResponse(message);
-                
-                if (analysis.isPersonal && memorySummary.length > 0) {
-                    response += ' ' + generatePersonalConnection();
-                }
-                
-                response += ' ' + generateEmotionalFollowUp();
-                
-                return response;
-            }
-            
-            function generateLogicalResponse(message, analysis, memorySummary) {
-                let response = 'Логический анализ сообщения:\n';
-                
-                response += `1. Тип: ${analysis.isQuestion ? 'вопрос' : 'утверждение'}\n`;
-                response += `2. Личное: ${analysis.isPersonal ? 'да' : 'нет'}\n`;
-                if (analysis.topics.length > 0) {
-                    response += `3. Темы: ${analysis.topics.join(', ')}\n`;
-                }
-                
-                response += '\nВывод: ' + generateLogicalAnalysis(message);
-                
-                if (analysis.needsFollowUp) {
-                    response += '\n\nВопрос для уточнения: ' + generateLogicalFollowUp();
-                }
-                
-                return response;
-            }
-            
-            function generateAnswerToQuestion(question) {
-                const lowerQ = question.toLowerCase();
-                const answers = {
-                    'как дела': 'У меня всё отлично, я занят обработкой нашего диалога! ',
-                    'что думаешь': 'На основе нашего разговора, я думаю, что ',
-                    'почему': 'Это интересный вопрос. Вероятно, потому что ',
-                    'как': 'Это зависит от многих факторов. Обычно ',
-                    'что такое': 'Если говорить кратко, то это '
-                };
-                
-                for (const [key, answer] of Object.entries(answers)) {
-                    if (lowerQ.includes(key)) {
+                // Поиск в общих ответах
+                for (const [topic, answer] of Object.entries(generalResponses)) {
+                    if (lowerMsg.includes(topic)) {
                         return answer;
                     }
                 }
                 
-                return 'Интересный вопрос! На мой взгляд, ';
+                // Генерация осмысленного ответа
+                return generateMeaningfulResponse(message);
             }
             
-            function generateContextualFollowUp(message) {
-                const followUps = [
-                    'Вы хотите продолжить эту тему?',
-                    'Как это связано с тем, что мы обсуждали ранее?',
-                    'Интересно, как это развивает наш предыдущий разговор.',
-                    'Заметил связь с нашей беседой. Хотите углубиться в эту тему?'
-                ];
-                return followUps[Math.floor(Math.random() * followUps.length)];
-            }
-            
-            function generateEmotionalSupport(message) {
-                const supports = [
-                    'Понимаю ваши чувства. Это действительно важно.',
-                    'Спасибо, что делитесь этим со мной.',
-                    'Ваши эмоции понятны и важны для нашего диалога.',
-                    'Чувствую, что это для вас значимая тема.'
-                ];
-                return supports[Math.floor(Math.random() * supports.length)];
-            }
-            
-            function generatePersonalResponse(message) {
+            function generateMeaningfulResponse(message) {
+                const lowerMsg = message.toLowerCase();
+                
+                // Определение типа вопроса
+                if (lowerMsg.includes('почему') || lowerMsg.includes('зачем')) {
+                    return generateCausalResponse(message);
+                } else if (lowerMsg.includes('как') || lowerMsg.includes('способ') || lowerMsg.includes('метод')) {
+                    return generateMethodResponse(message);
+                } else if (lowerMsg.includes('что такое') || lowerMsg.includes('что значит')) {
+                    return generateDefinitionResponse(message);
+                } else if (lowerMsg.includes('лучше') || lowerMsg.includes('хуже') || lowerMsg.includes('сравни')) {
+                    return generateComparisonResponse(message);
+                } else if (lowerMsg.includes('совет') || lowerMsg.includes('рекомендация')) {
+                    return generateAdviceResponse(message);
+                }
+                
+                // Общий осмысленный ответ
                 const responses = [
-                    'Это очень интересно узнать о вас.',
-                    'Спасибо, что делитесь личным опытом.',
-                    'Ваш опыт действительно ценен для нашего диалога.',
-                    'Понимаю вашу точку зрения.'
-                ];
-                return responses[Math.floor(Math.random() * responses.length)];
-            }
-            
-            function generateGeneralResponse(message) {
-                const responses = [
-                    'Понял вас. ',
-                    'Интересная мысль! ',
-                    'Спасибо, что поделились. ',
-                    'Да, это действительно так. '
-                ];
-                return responses[Math.floor(Math.random() * responses.length)];
-            }
-            
-            function generateFollowUpQuestion(analysis) {
-                const questions = [
-                    'А что вы сами думаете по этому поводу?',
-                    'Хотите обсудить это подробнее?',
-                    'Как это соотносится с вашим опытом?',
-                    'Есть ли что-то еще, что вы хотели бы добавить?',
-                    'Как вы пришли к этой мысли?'
-                ];
-                return questions[Math.floor(Math.random() * questions.length)];
-            }
-            
-            function generateMemoryReference() {
-                const references = [
-                    'Кстати, помню, вы упоминали об этом ранее.',
-                    'Это напоминает наш предыдущий разговор.',
-                    'Как я помню из нашей беседы...',
-                    'В контексте того, что мы обсуждали...'
-                ];
-                return references[Math.floor(Math.random() * references.length)];
-            }
-            
-            function getCurrentTime() {
-                const now = new Date();
-                return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            }
-            
-            function scrollToBottom() {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-            
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-            
-            // Автоматическое изменение высоты textarea
-            userInput.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-            });
-        });
-    </script>
-</body>
-</html>
+                    `<strong>Конкретный ответ:</strong><br><br>Давайте разберём по пунктам:<br><br>1. <strong>Основная идея:</strong> Суть в том, что...<br>2. <strong>Ключевые аспекты:</strong> Важно учитывать...<br>3. <strong>Практическое применение:</strong> На практике это значит...`,
+                    `<strong>Отвечаю конкретно:</strong><br><br>• <strong>Факт 1:</strong> ...<br>• <strong>Факт 2:</strong> ...<br>• <strong>Факт 3:</strong> ...<br><br><strong>Вывод:</strong> Исходя из этого...`,
+                    `<strong>Суть вопроса:</strong><br><br>Если говорить прямо, то...<br><br><strong>Подробнее:</strong><br>1. ...<br>2. ...<br>3. ...<br><br><strong>Что

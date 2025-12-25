@@ -3,13 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Настоящий ИИ на Ollama</title>
+    <title>Продвинутый ИИ с ML API</title>
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
         * {
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Text', sans-serif;
             margin: 0;
             padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         body {
@@ -19,118 +33,144 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #f8fafc;
+            color: var(--text-light);
         }
         
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
             background: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(10px);
             border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 95vh;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
         }
         
         header {
-            background: linear-gradient(90deg, #0f172a, #1e293b);
+            background: linear-gradient(90deg, var(--bg-dark), var(--bg-card));
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .title-section h1 {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        
+        .title-section p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+        
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.disconnected {
+            background: var(--danger);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .controls {
             padding: 24px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .model-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .model-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
             position: relative;
         }
         
-        h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
-            background: linear-gradient(90deg, #60a5fa, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 700;
-        }
-        
-        .subtitle {
-            font-size: 16px;
-            color: #cbd5e1;
-            margin-bottom: 16px;
-        }
-        
-        .api-config {
-            background: rgba(15, 23, 42, 0.6);
-            padding: 20px;
-            border-radius: 16px;
-            margin-top: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        @media (max-width: 768px) {
-            .config-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .config-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        label {
-            font-size: 14px;
-            color: #94a3b8;
-            font-weight: 500;
-        }
-        
-        select, input {
-            padding: 12px 16px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: #f8fafc;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        select:focus, input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        .test-btn {
-            padding: 12px 24px;
-            background: linear-gradient(90deg, #10b981, #059669);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-        }
-        
-        .test-btn:hover {
+        .model-card:hover {
+            border-color: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
         }
         
-        .test-btn:disabled {
-            background: #475569;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        .model-card.active {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent);
+        }
+        
+        .model-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+        
+        .model-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+        
+        .model-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
+        .chat-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: rgba(15, 23, 42, 0.6);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            overflow-y: auto;
         }
         
         .chat-container {
@@ -139,86 +179,86 @@
             padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 20px;
             background: rgba(15, 23, 42, 0.3);
         }
         
         .message {
             max-width: 85%;
-            padding: 18px 22px;
-            border-radius: 18px;
+            padding: 20px;
+            border-radius: 20px;
             line-height: 1.6;
             position: relative;
-            animation: fadeIn 0.3s ease;
-            font-size: 15px;
+            animation: slideIn 0.3s ease;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .user-message {
             align-self: flex-end;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border-bottom-right-radius: 5px;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
         }
         
         .ai-message {
             align-self: flex-start;
             background: rgba(30, 41, 59, 0.8);
-            color: #f1f5f9;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 1px solid var(--border);
             border-bottom-left-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .message-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-size: 14px;
         }
         
         .message-sender {
             font-weight: 600;
-            color: #94a3b8;
+            color: var(--text-muted);
         }
         
         .user-message .message-sender {
             color: rgba(255, 255, 255, 0.9);
         }
         
-        .ai-message .message-sender {
-            color: #60a5fa;
-        }
-        
         .message-time {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 12px;
-        }
-        
-        .user-message .message-time {
-            color: rgba(255, 255, 255, 0.7);
         }
         
         .typing-indicator {
             display: none;
             align-self: flex-start;
             background: rgba(30, 41, 59, 0.8);
-            border-radius: 18px;
-            padding: 16px 20px;
-            width: 80px;
-            margin-bottom: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .typing-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
         .typing-dots {
             display: flex;
-            justify-content: center;
             gap: 6px;
         }
         
@@ -226,7 +266,7 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #60a5fa;
+            background: var(--primary);
             animation: typing 1.4s infinite ease-in-out;
         }
         
@@ -239,63 +279,62 @@
         }
         
         .input-container {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            border-top: 1px solid var(--border);
             background: rgba(15, 23, 42, 0.6);
+        }
+        
+        .input-wrapper {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             align-items: flex-end;
         }
         
         .message-input {
             flex: 1;
-            padding: 14px 20px;
+            padding: 16px 24px;
             background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            color: #f8fafc;
-            font-size: 15px;
-            transition: all 0.2s;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-light);
+            font-size: 16px;
+            transition: all 0.3s;
             resize: none;
-            height: 56px;
-            line-height: 1.4;
+            min-height: 60px;
+            line-height: 1.5;
         }
         
         .message-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
         
         .message-input::placeholder {
-            color: #64748b;
+            color: var(--text-muted);
         }
         
         .send-btn {
-            padding: 14px 28px;
-            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            padding: 16px 32px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
-            border-radius: 16px;
-            font-size: 15px;
+            border-radius: 20px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            min-width: 100px;
-            height: 56px;
+            transition: all 0.3s;
+            min-width: 120px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
         }
         
-        .send-btn:hover {
-            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+        .send-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-        }
-        
-        .send-btn:active {
-            transform: translateY(0);
+            box-shadow: 0 12px 25px rgba(99, 102, 241, 0.3);
         }
         
         .send-btn:disabled {
@@ -305,63 +344,168 @@
             box-shadow: none;
         }
         
-        .status-bar {
-            padding: 12px 24px;
-            background: rgba(15, 23, 42, 0.8);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .example-btn {
+            padding: 10px 16px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .stats {
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 13px;
-            color: #94a3b8;
+            font-size: 14px;
+            color: var(--text-muted);
         }
         
-        .status-indicator {
+        .stat-item {
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-        
-        .status-dot.connected {
-            background: #10b981;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-dot.disconnected {
-            background: #ef4444;
-        }
-        
-        .model-info {
-            color: #60a5fa;
-            font-weight: 500;
         }
         
         .error-message {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #fecaca;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 16px 24px;
+            padding: 16px;
+            border-radius: 16px;
+            margin: 0 24px 20px;
             font-size: 14px;
             display: none;
         }
         
-        .system-message {
-            background: rgba(234, 179, 8, 0.1);
-            border: 1px solid rgba(234, 179, 8, 0.3);
-            color: #fef3c7;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 0 24px 16px;
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #a7f3d0;
+            padding: 16px;
+            border-radius: 16px;
+            margin: 0 24px 20px;
             font-size: 14px;
-            text-align: center;
+            display: none;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            margin: 12px 0;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .ai-message strong {
+            color: var(--primary);
+        }
+        
+        .ai-message a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .ai-message a:hover {
+            text-decoration: underline;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+        
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .conversation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .conversation-item {
+            padding: 12px 16px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .conversation-item:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--primary);
+        }
+        
+        .conversation-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: var(--text-light);
+        }
+        
+        .conversation-preview {
+            font-size: 12px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .clear-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fecaca;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .clear-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        
+        @media (max-width: 1024px) {
+            .chat-wrapper {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                max-height: 200px;
+            }
         }
         
         @media (max-width: 768px) {
@@ -370,11 +514,16 @@
                 border-radius: 0;
             }
             
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
             .message {
                 max-width: 95%;
             }
             
-            .input-container {
+            .input-wrapper {
                 flex-direction: column;
             }
             
@@ -383,258 +532,317 @@
             }
         }
         
-        .message-content {
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        .model-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 8px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
         
-        .code-block {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 12px;
-            border-radius: 8px;
-            margin: 8px 0;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            border-left: 3px solid #3b82f6;
+        .token-count {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
         }
         
-        .ai-message strong {
-            color: #60a5fa;
-        }
-        
-        .ai-message a {
-            color: #60a5fa;
-            text-decoration: none;
-        }
-        
-        .ai-message a:hover {
-            text-decoration: underline;
+        .thinking-indicator {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 8px;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Настоящий ИИ на Ollama</h1>
-            <div class="subtitle">Подключение к локальной модели для настоящих осмысленных ответов</div>
-            
-            <div class="api-config">
-                <div class="config-grid">
-                    <div class="config-group">
-                        <label for="apiUrl">Ollama API URL</label>
-                        <input type="text" id="apiUrl" value="http://localhost:11434" placeholder="http://localhost:11434">
-                    </div>
-                    
-                    <div class="config-group">
-                        <label for="modelSelect">Модель</label>
-                        <select id="modelSelect">
-                            <option value="llama3.2">Llama 3.2 (3B)</option>
-                            <option value="llama3.2:1b">Llama 3.2 (1B)</option>
-                            <option value="llama3.1">Llama 3.1 (8B)</option>
-                            <option value="mistral">Mistral (7B)</option>
-                            <option value="phi">Phi-3 (3.8B)</option>
-                            <option value="gemma">Gemma (2B)</option>
-                            <option value="qwen">Qwen (7B)</option>
-                        </select>
-                    </div>
+            <div class="header-content">
+                <div class="title-section">
+                    <h1>Продвинутый ИИ с ML API</h1>
+                    <p>Настоящий искусственный интеллект с использованием современных моделей</p>
                 </div>
-                
-                <button class="test-btn" id="testConnection">Проверить подключение</button>
+                <div class="api-status">
+                    <div class="status-dot disconnected" id="statusDot"></div>
+                    <span id="statusText">API не подключен</span>
+                </div>
             </div>
         </header>
         
-        <div class="system-message">
-            ⚡ Установите Ollama локально, запустите модель, и ИИ будет работать на вашем компьютере
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <div class="controls">
+            <div class="model-selector">
+                <div class="model-card active" data-model="gpt-3.5-turbo">
+                    <div class="model-icon">🤖</div>
+                    <div class="model-name">GPT-3.5 Turbo</div>
+                    <div class="model-desc">Быстрая и эффективная модель для общения и решения задач</div>
+                    <span class="model-badge">БЫСТРАЯ</span>
+                </div>
+                <div class="model-card" data-model="gpt-4">
+                    <div class="model-icon">🧠</div>
+                    <div class="model-name">GPT-4</div>
+                    <div class="model-desc">Продвинутая модель для сложных задач и глубокого анализа</div>
+                    <span class="model-badge">ПРОДВИНУТАЯ</span>
+                </div>
+                <div class="model-card" data-model="claude-2">
+                    <div class="model-icon">🌟</div>
+                    <div class="model-name">Claude 2</div>
+                    <div class="model-desc">Творческая модель для креативных задач и писательства</div>
+                    <span class="model-badge">КРЕАТИВНАЯ</span>
+                </div>
+                <div class="model-card" data-model="llama-2-70b">
+                    <div class="model-icon">🦙</div>
+                    <div class="model-name">Llama 2 70B</div>
+                    <div class="model-desc">Мощная open-source модель для кода и анализа</div>
+                    <span class="model-badge">OPEN SOURCE</span>
+                </div>
+            </div>
         </div>
         
-        <div class="error-message" id="errorMessage"></div>
-        
-        <div class="chat-container" id="chatContainer">
-            <div class="message ai-message">
-                <div class="message-header">
-                    <div class="message-sender">ИИ Ollama</div>
-                    <div class="message-time" id="currentTime"></div>
+        <div class="chat-wrapper">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">История бесед</div>
+                    <div class="conversation-list" id="conversationList">
+                        <div class="conversation-item">
+                            <div class="conversation-title">Текущая беседа</div>
+                            <div class="conversation-preview">Начните общение...</div>
+                        </div>
+                    </div>
+                    <button class="clear-btn" id="clearHistory">
+                        <i class="fas fa-trash"></i> Очистить историю
+                    </button>
                 </div>
-                <div class="message-content">
-                    <strong>Привет! Я — настоящий ИИ, работающий на вашем компьютере через Ollama.</strong><br><br>
-                    
-                    Чтобы начать общение:<br>
-                    1. Установите <a href="https://ollama.com" target="_blank">Ollama</a><br>
-                    2. Запустите выбранную модель командой: <code>ollama run [модель]</code><br>
-                    3. Проверьте подключение кнопкой выше<br>
-                    4. Задавайте любые вопросы — я отвечу осмысленно и по существу
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Быстрые примеры</div>
+                    <div class="examples">
+                        <button class="example-btn" data-example="Объясни квантовую физику простыми словами">Квантовая физика</button>
+                        <button class="example-btn" data-example="Напиши код функции для сортировки массива на Python">Код сортировки</button>
+                        <button class="example-btn" data-example="Как работает блокчейн?">Блокчейн</button>
+                        <button class="example-btn" data-example="Напиши бизнес-план для стартапа">Бизнес-план</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-container" id="chatContainer">
+                <div class="message ai-message">
+                    <div class="message-header">
+                        <div class="message-sender">ИИ Ассистент</div>
+                        <div class="message-time" id="currentTime"></div>
+                    </div>
+                    <div class="message-content">
+                        <strong>Привет! Я — продвинутый искусственный интеллект с использованием ML API.</strong><br><br>
+                        
+                        🔹 <strong>Доступные модели:</strong> GPT-3.5, GPT-4, Claude 2, Llama 2<br>
+                        🔹 <strong>Подключение:</strong> Используется ваш API ключ<br>
+                        🔹 <strong>Возможности:</strong> Код, анализ, творчество, обучение<br><br>
+                        
+                        Выберите модель выше и задавайте любые вопросы!
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-dots">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+            <div class="typing-content">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span id="typingModel">GPT-3.5 Turbo думает...</span>
             </div>
         </div>
         
         <div class="input-container">
-            <textarea class="message-input" id="userInput" placeholder="Задайте любой вопрос... (Enter для отправки, Shift+Enter для новой строки)" autocomplete="off" disabled></textarea>
-            <button class="send-btn" id="sendButton" disabled>
-                Отправить
-            </button>
+            <div class="input-wrapper">
+                <textarea class="message-input" id="userInput" 
+                          placeholder="Введите ваш вопрос или сообщение..." 
+                          autocomplete="off" disabled></textarea>
+                <button class="send-btn" id="sendButton" disabled>
+                    <i class="fas fa-paper-plane"></i> Отправить
+                </button>
+            </div>
+            
+            <div class="examples" style="margin-top: 16px;">
+                <button class="example-btn" data-example="Как улучшить производительность веб-сайта?">Веб-производительность</button>
+                <button class="example-btn" data-example="Объясни теорию относительности">Теория относительности</button>
+                <button class="example-btn" data-example="Напиши поэму о космосе">Поэма о космосе</button>
+                <button class="example-btn" data-example="Создай план тренировок на неделю">План тренировок</button>
+            </div>
         </div>
         
-        <div class="status-bar">
-            <div class="status-indicator">
-                <div class="status-dot disconnected" id="statusDot"></div>
-                <span id="statusText">Не подключено к Ollama</span>
+        <div class="stats">
+            <div class="stat-item">
+                <i class="fas fa-brain"></i>
+                <span>Модель: <span id="currentModelDisplay">GPT-3.5 Turbo</span></span>
             </div>
-            <div class="model-info">
-                Модель: <span id="modelName">Не выбрана</span>
+            <div class="stat-item">
+                <i class="fas fa-database"></i>
+                <span>Использовано токенов: <span id="tokenCount">0</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-comments"></i>
+                <span>Сообщений: <span id="messageCount">1</span></span>
             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Конфигурация
+            const API_KEY = 'f1f9f85792af41cdba40102ee8975cf8';
+            const API_BASE_URL = 'https://api.openai.com/v1'; // Измените на ваш API endpoint
+            
             // Элементы DOM
             const chatContainer = document.getElementById('chatContainer');
             const userInput = document.getElementById('userInput');
             const sendButton = document.getElementById('sendButton');
             const typingIndicator = document.getElementById('typingIndicator');
-            const apiUrlInput = document.getElementById('apiUrl');
-            const modelSelect = document.getElementById('modelSelect');
-            const testConnectionBtn = document.getElementById('testConnection');
+            const typingModel = document.getElementById('typingModel');
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
-            const modelName = document.getElementById('modelName');
             const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const currentModelDisplay = document.getElementById('currentModelDisplay');
+            const tokenCount = document.getElementById('tokenCount');
+            const messageCount = document.getElementById('messageCount');
+            const clearHistoryBtn = document.getElementById('clearHistory');
             
             // Состояние приложения
             let isConnected = false;
-            let currentApiUrl = 'http://localhost:11434';
-            let currentModel = 'llama3.2';
+            let currentModel = 'gpt-3.5-turbo';
             let conversationHistory = [];
+            let totalTokens = 0;
+            let conversations = [];
             
             // Инициализация
-            updateStatus();
-            document.getElementById('currentTime').textContent = getCurrentTime();
+            init();
             
-            // Обработчики событий
-            testConnectionBtn.addEventListener('click', testConnection);
-            sendButton.addEventListener('click', sendMessage);
-            userInput.addEventListener('keydown', handleKeyDown);
-            apiUrlInput.addEventListener('change', updateApiUrl);
-            modelSelect.addEventListener('change', updateModel);
-            
-            // Управление вводом
-            userInput.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-            });
-            
-            function updateApiUrl() {
-                currentApiUrl = apiUrlInput.value.trim();
-                if (!currentApiUrl) {
-                    currentApiUrl = 'http://localhost:11434';
-                    apiUrlInput.value = currentApiUrl;
-                }
-                isConnected = false;
-                updateStatus();
-            }
-            
-            function updateModel() {
-                currentModel = modelSelect.value;
-                modelName.textContent = currentModel;
-                if (isConnected) {
-                    // Подтверждаем изменение модели
-                    addSystemMessage(`Модель изменена на ${currentModel}. Отправьте сообщение для обновления контекста.`);
-                }
-            }
-            
-            async function testConnection() {
-                testConnectionBtn.disabled = true;
-                testConnectionBtn.textContent = 'Проверяю...';
+            async function init() {
+                // Загрузка сохранённых данных
+                loadFromLocalStorage();
                 
+                // Установка времени
+                document.getElementById('currentTime').textContent = getCurrentTime();
+                
+                // Проверка API подключения
+                await testAPIConnection();
+                
+                // Настройка обработчиков событий
+                setupEventListeners();
+                
+                // Обновление UI
+                updateUI();
+            }
+            
+            function setupEventListeners() {
+                // Выбор модели
+                document.querySelectorAll('.model-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
+                        this.classList.add('active');
+                        currentModel = this.dataset.model;
+                        currentModelDisplay.textContent = this.querySelector('.model-name').textContent;
+                        
+                        showSuccess(`Модель изменена на ${currentModel}`);
+                    });
+                });
+                
+                // Отправка сообщения
+                sendButton.addEventListener('click', sendMessage);
+                userInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey && isConnected) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+                
+                // Автоматическое изменение высоты textarea
+                userInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+                });
+                
+                // Примеры вопросов
+                document.querySelectorAll('.example-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (!isConnected) {
+                            showError('Сначала подключитесь к API');
+                            return;
+                        }
+                        userInput.value = this.dataset.example;
+                        userInput.focus();
+                        userInput.style.height = 'auto';
+                        userInput.style.height = Math.min(userInput.scrollHeight, 150) + 'px';
+                    });
+                });
+                
+                // Очистка истории
+                clearHistoryBtn.addEventListener('click', function() {
+                    if (confirm('Очистить всю историю бесед? Это действие нельзя отменить.')) {
+                        conversationHistory = [];
+                        conversations = [];
+                        totalTokens = 0;
+                        saveToLocalStorage();
+                        updateUI();
+                        showSuccess('История очищена');
+                        
+                        // Очищаем чат
+                        chatContainer.innerHTML = `
+                            <div class="message ai-message">
+                                <div class="message-header">
+                                    <div class="message-sender">ИИ Ассистент</div>
+                                    <div class="message-time">${getCurrentTime()}</div>
+                                </div>
+                                <div class="message-content">
+                                    История беседы очищена. Начните новый диалог!
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            async function testAPIConnection() {
                 try {
-                    // Пробуем получить список моделей
-                    const response = await fetch(`${currentApiUrl}/api/tags`, {
+                    showStatus('Проверка подключения...', 'warning');
+                    
+                    // Тестовый запрос к API
+                    const response = await fetch(`${API_BASE_URL}/models`, {
                         method: 'GET',
                         headers: {
-                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`,
+                            'Content-Type': 'application/json'
                         }
                     });
                     
-                    if (!response.ok) {
-                        throw new Error(`Ошибка HTTP: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    if (data.models && data.models.length > 0) {
+                    if (response.ok) {
                         isConnected = true;
-                        addSystemMessage('✅ Подключение к Ollama успешно! Доступные модели: ' + 
-                            data.models.map(m => m.name).join(', '));
-                        
-                        // Проверяем, доступна ли выбранная модель
-                        const availableModels = data.models.map(m => m.name);
-                        if (!availableModels.includes(currentModel)) {
-                            addSystemMessage(`⚠️ Модель ${currentModel} не найдена. Попробуйте запустить её командой: ollama run ${currentModel}`);
-                        }
+                        showStatus('API подключен', 'success');
+                        showSuccess('Подключение к API успешно установлено!');
+                        updateUI();
                     } else {
-                        throw new Error('Нет доступных моделей. Установите модель командой: ollama run llama3.2');
+                        throw new Error(`API ошибка: ${response.status}`);
                     }
-                    
                 } catch (error) {
                     isConnected = false;
-                    showError(`Ошибка подключения: ${error.message}. Убедитесь, что:<br>
-                    1. Ollama установлен и запущен<br>
-                    2. API доступен по адресу ${currentApiUrl}<br>
-                    3. Установлена хотя бы одна модель (ollama run llama3.2)`);
+                    showStatus('API не подключен', 'error');
+                    showError(`Не удалось подключиться к API: ${error.message}. Проверьте ключ и подключение к интернету.`);
+                    updateUI();
                 }
-                
-                testConnectionBtn.disabled = false;
-                testConnectionBtn.textContent = 'Проверить подключение';
-                updateStatus();
-            }
-            
-            function updateStatus() {
-                if (isConnected) {
-                    statusDot.className = 'status-dot connected';
-                    statusText.textContent = 'Подключено к Ollama';
-                    userInput.disabled = false;
-                    sendButton.disabled = false;
-                    userInput.placeholder = 'Задайте любой вопрос...';
-                } else {
-                    statusDot.className = 'status-dot disconnected';
-                    statusText.textContent = 'Не подключено к Ollama';
-                    userInput.disabled = true;
-                    sendButton.disabled = true;
-                    userInput.placeholder = 'Сначала подключитесь к Ollama...';
-                }
-            }
-            
-            function showError(message) {
-                errorMessage.innerHTML = message;
-                errorMessage.style.display = 'block';
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 10000);
-            }
-            
-            function addSystemMessage(text) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'system-message';
-                messageDiv.innerHTML = text;
-                
-                const chatContainer = document.getElementById('chatContainer');
-                const existingSystem = chatContainer.querySelector('.system-message');
-                if (existingSystem) {
-                    chatContainer.insertBefore(messageDiv, existingSystem.nextSibling);
-                } else {
-                    chatContainer.appendChild(messageDiv);
-                }
-                
-                scrollToBottom();
             }
             
             async function sendMessage() {
@@ -642,9 +850,9 @@
                 if (!message || !isConnected) return;
                 
                 // Добавляем сообщение пользователя
-                addUserMessage(message);
+                addMessageToChat('user', message);
                 
-                // Сохраняем в историю
+                // Добавляем в историю
                 conversationHistory.push({
                     role: 'user',
                     content: message,
@@ -653,49 +861,47 @@
                 
                 // Очищаем поле ввода
                 userInput.value = '';
-                userInput.style.height = '56px';
+                userInput.style.height = '60px';
                 
                 // Показываем индикатор набора
+                typingModel.textContent = `${currentModelDisplay.textContent} думает...`;
                 typingIndicator.style.display = 'block';
                 
                 try {
-                    // Готовим сообщения для API
-                    const messages = conversationHistory.map(msg => ({
-                        role: msg.role,
-                        content: msg.content
-                    }));
+                    // Подготавливаем сообщения для API
+                    const messages = [
+                        {
+                            role: 'system',
+                            content: `Ты полезный AI ассистент. Отвечай подробно, информативно и по существу. 
+                            Используй markdown форматирование: **жирный текст**, \`код\`, списки.
+                            Если вопрос сложный - разбивай ответ на логические части.
+                            Будь точным в фактах. Отвечай на русском языке, если пользователь пишет на русском.`
+                        },
+                        ...conversationHistory.slice(-10).map(msg => ({
+                            role: msg.role,
+                            content: msg.content
+                        }))
+                    ];
                     
-                    // Добавляем системный промпт для лучших ответов
-                    messages.unshift({
-                        role: 'system',
-                        content: `Ты полезный AI ассистент. Отвечай подробно, информативно и по существу. 
-                        Используй markdown форматирование: **жирный** для важного, \`код\` для команд и примеров.
-                        Если вопрос требует пошагового решения - давай четкие шаги.
-                        Будь точным в фактах, но если не уверен - честно скажи об этом.`
-                    });
-                    
-                    // Отправляем запрос к Ollama API
-                    const response = await fetch(`${currentApiUrl}/api/chat`, {
+                    // Отправляем запрос к API
+                    const response = await fetch(`${API_BASE_URL}/chat/completions`, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEY}`,
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
                             model: currentModel,
                             messages: messages,
-                            stream: false,
-                            options: {
-                                temperature: 0.7,
-                                top_p: 0.9,
-                                top_k: 40,
-                                repeat_penalty: 1.1,
-                                num_predict: 2048
-                            }
+                            temperature: 0.7,
+                            max_tokens: 2000,
+                            top_p: 0.9
                         })
                     });
                     
                     if (!response.ok) {
-                        throw new Error(`Ошибка API: ${response.status} ${response.statusText}`);
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `API ошибка: ${response.status}`);
                     }
                     
                     const data = await response.json();
@@ -703,67 +909,62 @@
                     // Скрываем индикатор набора
                     typingIndicator.style.display = 'none';
                     
-                    // Добавляем ответ ИИ
-                    const aiResponse = data.message.content;
-                    addAIMessage(aiResponse);
+                    // Получаем ответ
+                    const aiResponse = data.choices[0].message.content;
+                    const tokensUsed = data.usage.total_tokens;
                     
-                    // Сохраняем ответ в историю
+                    // Добавляем ответ ИИ
+                    addMessageToChat('assistant', aiResponse);
+                    
+                    // Обновляем статистику
+                    totalTokens += tokensUsed;
+                    tokenCount.textContent = totalTokens.toLocaleString();
+                    
+                    // Сохраняем в историю
                     conversationHistory.push({
                         role: 'assistant',
                         content: aiResponse,
                         timestamp: new Date().toISOString()
                     });
                     
-                    // Ограничиваем историю (последние 20 сообщений)
-                    if (conversationHistory.length > 20) {
-                        conversationHistory = conversationHistory.slice(-20);
-                    }
+                    // Обновляем список бесед
+                    updateConversationList(message);
+                    
+                    // Сохраняем данные
+                    saveToLocalStorage();
                     
                 } catch (error) {
                     typingIndicator.style.display = 'none';
-                    showError(`Ошибка при получении ответа: ${error.message}`);
-                    addAIMessage('Извините, произошла ошибка при обработке запроса. Пожалуйста, проверьте подключение к Ollama и попробуйте снова.');
+                    showError(`Ошибка: ${error.message}`);
+                    addMessageToChat('assistant', 'Извините, произошла ошибка при обработке вашего запроса. Пожалуйста, попробуйте еще раз.');
                 }
             }
             
-            function addUserMessage(text) {
+            function addMessageToChat(role, content) {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = 'message user-message';
+                messageDiv.className = `message ${role === 'user' ? 'user-message' : 'ai-message'}`;
                 
                 const time = getCurrentTime();
+                const sender = role === 'user' ? 'Вы' : 'ИИ Ассистент';
+                
                 messageDiv.innerHTML = `
                     <div class="message-header">
-                        <div class="message-sender">Вы</div>
+                        <div class="message-sender">${sender}</div>
                         <div class="message-time">${time}</div>
                     </div>
-                    <div class="message-content">${escapeHtml(text)}</div>
+                    <div class="message-content">${formatMessageContent(content)}</div>
                 `;
                 
                 chatContainer.appendChild(messageDiv);
                 scrollToBottom();
-            }
-            
-            function addAIMessage(text) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message ai-message';
                 
-                const time = getCurrentTime();
-                const formattedContent = formatMessageContent(text);
-                
-                messageDiv.innerHTML = `
-                    <div class="message-header">
-                        <div class="message-sender">ИИ (${currentModel})</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                    <div class="message-content">${formattedContent}</div>
-                `;
-                
-                chatContainer.appendChild(messageDiv);
-                scrollToBottom();
+                // Обновляем счетчик сообщений
+                const currentCount = parseInt(messageCount.textContent);
+                messageCount.textContent = currentCount + 1;
             }
             
             function formatMessageContent(text) {
-                // Форматирование Markdown
+                // Базовая обработка Markdown
                 let formatted = escapeHtml(text);
                 
                 // Жирный текст
@@ -772,7 +973,7 @@
                 // Курсив
                 formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
                 
-                // Код inline
+                // Inline код
                 formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
                 
                 // Блоки кода
@@ -784,12 +985,7 @@
                 formatted = formatted.replace(/^\- (.*?)$/gm, '• $1');
                 formatted = formatted.replace(/^\d+\. (.*?)$/gm, '$&');
                 
-                // Заголовки
-                formatted = formatted.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-                formatted = formatted.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-                formatted = formatted.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-                
-                // Ссылки (базовые)
+                // Ссылки
                 formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
                 
                 // Переносы строк
@@ -798,11 +994,96 @@
                 return formatted;
             }
             
-            function handleKeyDown(e) {
-                if (e.key === 'Enter' && !e.shiftKey && isConnected) {
-                    e.preventDefault();
-                    sendMessage();
+            function updateConversationList(lastMessage) {
+                // Создаем или обновляем текущую беседу
+                if (conversations.length === 0 || conversations[0].title === 'Текущая беседа') {
+                    const title = lastMessage.length > 30 ? lastMessage.substring(0, 30) + '...' : lastMessage;
+                    conversations[0] = {
+                        id: Date.now(),
+                        title: title,
+                        preview: lastMessage,
+                        timestamp: new Date().toISOString(),
+                        history: [...conversationHistory]
+                    };
+                } else {
+                    conversations[0].preview = lastMessage;
+                    conversations[0].timestamp = new Date().toISOString();
+                    conversations[0].history = [...conversationHistory];
                 }
+                
+                // Обновляем UI списка бесед
+                updateConversationUI();
+            }
+            
+            function updateConversationUI() {
+                const listContainer = document.getElementById('conversationList');
+                listContainer.innerHTML = '';
+                
+                conversations.forEach(conv => {
+                    const item = document.createElement('div');
+                    item.className = 'conversation-item';
+                    item.innerHTML = `
+                        <div class="conversation-title">${conv.title}</div>
+                        <div class="conversation-preview">${conv.preview}</div>
+                    `;
+                    
+                    item.addEventListener('click', () => {
+                        loadConversation(conv);
+                    });
+                    
+                    listContainer.appendChild(item);
+                });
+            }
+            
+            function loadConversation(conversation) {
+                // Очищаем текущий чат
+                chatContainer.innerHTML = '';
+                conversationHistory = [...conversation.history];
+                
+                // Восстанавливаем сообщения
+                conversation.history.forEach(msg => {
+                    addMessageToChat(msg.role, msg.content);
+                });
+                
+                // Обновляем статистику
+                messageCount.textContent = conversation.history.length;
+                
+                showSuccess(`Загружена беседа: ${conversation.title}`);
+            }
+            
+            function updateUI() {
+                if (isConnected) {
+                    userInput.disabled = false;
+                    sendButton.disabled = false;
+                    userInput.placeholder = 'Введите ваш вопрос или сообщение...';
+                } else {
+                    userInput.disabled = true;
+                    sendButton.disabled = true;
+                    userInput.placeholder = 'Подключитесь к API для начала общения...';
+                }
+                
+                updateConversationUI();
+            }
+            
+            function showStatus(text, type) {
+                statusText.textContent = text;
+                statusDot.className = `status-dot ${type}`;
+            }
+            
+            function showError(message) {
+                errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+                errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 8000);
+            }
+            
+            function showSuccess(message) {
+                successMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
             }
             
             function getCurrentTime() {
@@ -820,24 +1101,52 @@
                 return div.innerHTML;
             }
             
-            // Примеры сообщений для тестирования
-            window.addExampleMessage = function(type, text) {
-                if (type === 'user') {
-                    addUserMessage(text);
-                    conversationHistory.push({
-                        role: 'user',
-                        content: text,
-                        timestamp: new Date().toISOString()
-                    });
-                } else {
-                    addAIMessage(text);
-                    conversationHistory.push({
-                        role: 'assistant',
-                        content: text,
-                        timestamp: new Date().toISOString()
-                    });
+            function saveToLocalStorage() {
+                const data = {
+                    conversations: conversations,
+                    totalTokens: totalTokens,
+                    currentModel: currentModel
+                };
+                localStorage.setItem('aiChatData', JSON.stringify(data));
+            }
+            
+            function loadFromLocalStorage() {
+                const saved = localStorage.getItem('aiChatData');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        conversations = data.conversations || [];
+                        totalTokens = data.totalTokens || 0;
+                        currentModel = data.currentModel || 'gpt-3.5-turbo';
+                        
+                        // Обновляем отображение
+                        tokenCount.textContent = totalTokens.toLocaleString();
+                        currentModelDisplay.textContent = getModelDisplayName(currentModel);
+                        
+                        // Активируем выбранную модель
+                        document.querySelectorAll('.model-card').forEach(card => {
+                            if (card.dataset.model === currentModel) {
+                                card.classList.add('active');
+                            } else {
+                                card.classList.remove('active');
+                            }
+                        });
+                        
+                    } catch (e) {
+                        console.error('Ошибка загрузки данных:', e);
+                    }
                 }
-            };
+            }
+            
+            function getModelDisplayName(modelKey) {
+                const models = {
+                    'gpt-3.5-turbo': 'GPT-3.5 Turbo',
+                    'gpt-4': 'GPT-4',
+                    'claude-2': 'Claude 2',
+                    'llama-2-70b': 'Llama 2 70B'
+                };
+                return models[modelKey] || modelKey;
+            }
         });
     </script>
 </body>

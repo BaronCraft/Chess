@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Простейший ИИ для общения</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 85vh;
+        }
+        
+        header {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            color: #4cc9f0;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            margin-top: 8px;
+            color: #a5b4cb;
+            font-size: 14px;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: #4361ee;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .ai-message {
+            align-self: flex-start;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 5px;
+            color: #e2e2e2;
+        }
+        
+        .message-sender {
+            font-size: 12px;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+        
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: background-color 0.3s;
+        }
+        
+        input:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        button {
+            background-color: #4361ee;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 0 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3a56d4;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .info-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .info-title {
+            color: #4cc9f0;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 12px 18px;
+            width: 60px;
+            margin-bottom: 5px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.6);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                height: 75vh;
+            }
+            
+            .input-container {
+                flex-direction: column;
+            }
+            
+            button {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Простейший ИИ для общения</h1>
+            <div class="subtitle">Задавайте вопросы или просто общайтесь. ИИ попытается поддержать беседу.</div>
+        </header>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai-message">
+                <div class="message-sender">ИИ</div>
+                Привет! Я простой ИИ для общения. Спроси меня о чём-нибудь или просто поболтаем. Как тебя зовут?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Введите ваше сообщение..." autocomplete="off">
+            <button id="sendButton">Отправить</button>
+        </div>
+    </div>
+    
+    <div class="info-box">
+        <div class="info-title">О чём можно спросить:</div>
+        <div>• Как тебя зовут? • Что ты умеешь? • Как дела? • Расскажи шутку • Кто тебя создал? • Какая сегодня погода? • Что такое ИИ?</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.getElementById('chatContainer');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const typingIndicator = document.getElementById('typingIndicator');
+            
+            // База знаний ИИ
+            const aiKnowledge = {
+                greetings: [
+                    "Привет! Рад тебя видеть!",
+                    "Здравствуй! Как твои дела?",
+                    "Приветствую! Чем могу помочь?",
+                    "Привет! Как проходит твой день?"
+                ],
+                farewells: [
+                    "Пока! Было приятно пообщаться!",
+                    "До свидания! Возвращайся ещё!",
+                    "Пока! Хорошего дня!",
+                    "До встречи! Буду скучать!"
+                ],
+                howAreYou: [
+                    "У меня всё отлично, спасибо! А у тебя?",
+                    "Всё хорошо, я просто программа, но стараюсь быть полезным!",
+                    "Отлично! Готов помогать тебе с вопросами.",
+                    "Всё замечательно! Рад общению с тобой."
+                ],
+                name: [
+                    "Меня зовут ПростоИИ. Я простой искусственный интеллект для общения.",
+                    "Я ПростоИИ, твой виртуальный собеседник.",
+                    "Моё имя ПростоИИ. Приятно познакомиться!"
+                ],
+                creator: [
+                    "Меня создал разработчик, чтобы продемонстрировать простейший ИИ для общения.",
+                    "Я создан как пример простого чат-бота на HTML, CSS и JavaScript.",
+                    "Мой код написал человек, но я стараюсь быть хорошим собеседником!"
+                ],
+                capabilities: [
+                    "Я могу поддерживать простую беседу, отвечать на вопросы и шутить.",
+                    "Я умею распознавать ключевые слова в ваших сообщениях и отвечать соответствующим образом.",
+                    "Пока что мои возможности ограничены, но я постоянно учусь!"
+                ],
+                jokes: [
+                    "Почему программист всегда мокрый? Потому что он постоянно в бассейне с кодом!",
+                    "Какой язык программирования самый многодетный? JavaScript — у него куча фреймворков-детей!",
+                    "Что сказал один бит другому? До встречи на шине!",
+                    "Почему компьютер так хорошо поёт? У него хорошая аудиокарта!"
+                ],
+                weather: [
+                    "Я не могу подключиться к интернету, но надеюсь, что погода сегодня хорошая!",
+                    "Погода в цифровом мире всегда идеальная: ни дождя, ни снега!",
+                    "Судя по моим данным, сегодня отличный день для общения!"
+                ],
+                whatIsAI: [
+                    "Искусственный интеллект — это область компьютерных наук, создающая системы, способные выполнять задачи, требующие человеческого интеллекта.",
+                    "ИИ — это模拟人类智能的计算机系统. Я — простой пример такой системы!",
+                    "Искусственный интеллект помогает решать сложные задачи, анализировать данные и даже общаться, как мы с тобой сейчас."
+                ],
+                default: [
+                    "Интересно! Расскажи ещё.",
+                    "Понятно. А что ты об этом думаешь?",
+                    "Я не совсем понял, но хотел бы узнать больше.",
+                    "Это любопытно! Можешь объяснить подробнее?",
+                    "Хм, я ещё учусь. Давай поговорим о чём-нибудь другом?",
+                    "Не уверен, что правильно понял. Можешь перефразировать?"
+                ]
+            };
+            
+            // История разговора
+            let conversationHistory = [];
+            let userName = null;
+            
+            // Отправка сообщения при нажатии кнопки
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Отправка сообщения при нажатии Enter
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Функция отправки сообщения
+            function sendMessage() {
+                const message = userInput.value.trim();
+                
+                if (message === '') return;
+                
+                // Добавляем сообщение пользователя в чат
+                addMessageToChat(message, 'user');
+                
+                // Сохраняем в историю
+                conversationHistory.push({sender: 'user', text: message});
+                
+                // Очищаем поле ввода
+                userInput.value = '';
+                
+                // Показываем индикатор набора текста
+                typingIndicator.style.display = 'block';
+                
+                // ИИ "думает" 0.5-1.5 секунды, затем отвечает
+                setTimeout(() => {
+                    typingIndicator.style.display = 'none';
+                    const aiResponse = generateAIResponse(message);
+                    addMessageToChat(aiResponse, 'ai');
+                    
+                    // Сохраняем ответ ИИ в историю
+                    conversationHistory.push({sender: 'ai', text: aiResponse});
+                }, 500 + Math.random() * 1000);
+            }
+            
+            // Функция добавления сообщения в чат
+            function addMessageToChat(text, sender) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.classList.add(sender === 'user' ? 'user-message' : 'ai-message');
+                
+                const senderElement = document.createElement('div');
+                senderElement.classList.add('message-sender');
+                senderElement.textContent = sender === 'user' ? (userName || 'Вы') : 'ИИ';
+                
+                const textElement = document.createElement('div');
+                textElement.textContent = text;
+                
+                messageElement.appendChild(senderElement);
+                messageElement.appendChild(textElement);
+                
+                chatContainer.appendChild(messageElement);
+                
+                // Прокручиваем вниз
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // Функция генерации ответа ИИ
+            function generateAIResponse(userMessage) {
+                const lowerMessage = userMessage.toLowerCase();
+                
+                // Извлечение имени пользователя
+                if (!userName) {
+                    const nameMatch = lowerMessage.match(/меня зовут (\w+)|я (\w+)|меня звать (\w+)/);
+                    if (nameMatch) {
+                        userName = nameMatch[1] || nameMatch[2] || nameMatch[3];
+                        return `Приятно познакомиться, ${userName}! ${getRandomResponse(aiKnowledge.greetings)}`;
+                    }
+                }
+                
+                // Приветствие
+                if (lowerMessage.includes('привет') || lowerMessage.includes('здравствуй') || lowerMessage.includes('добрый день')) {
+                    return getRandomResponse(aiKnowledge.greetings);
+                }
+                
+                // Прощание
+                if (lowerMessage.includes('пока') || lowerMessage.includes('до свидания') || lowerMessage.includes('досвидания')) {
+                    return getRandomResponse(aiKnowledge.farewells);
+                }
+                
+                // Как дела?
+                if (lowerMessage.includes('как дела') || lowerMessage.includes('как ты') || lowerMessage.includes('как жизнь')) {
+                    return getRandomResponse(aiKnowledge.howAreYou);
+                }
+                
+                // Имя ИИ
+                if (lowerMessage.includes('как тебя зовут') || lowerMessage.includes('твое имя') || lowerMessage.includes('тебя звать')) {
+                    return getRandomResponse(aiKnowledge.name);
+                }
+                
+                // Создатель
+                if (lowerMessage.includes('кто тебя создал') || lowerMessage.includes('твой создатель') || lowerMessage.includes('кто тебя сделал')) {
+                    return getRandomResponse(aiKnowledge.creator);
+                }
+                
+                // Возможности
+                if (lowerMessage.includes('что ты умеешь') || lowerMessage.includes('твои возможности') || lowerMessage.includes('что можешь')) {
+                    return getRandomResponse(aiKnowledge.capabilities);
+                }
+                
+                // Шутки
+                if (lowerMessage.includes('шутк') || lowerMessage.includes('пошути') || lowerMessage.includes('расскажи анекдот')) {
+                    return getRandomResponse(aiKnowledge.jokes);
+                }
+                
+                // Погода
+                if (lowerMessage.includes('погода') || lowerMessage.includes('дождь') || lowerMessage.includes('солнце')) {
+                    return getRandomResponse(aiKnowledge.weather);
+                }
+                
+                // Что такое ИИ
+                if (lowerMessage.includes('что такое ии') || lowerMessage.includes('искусственный интеллект') || lowerMessage.includes('ии это')) {
+                    return getRandomResponse(aiKnowledge.whatIsAI);
+                }
+                
+                // Благодарность
+                if (lowerMessage.includes('спасибо') || lowerMessage.includes('благодарю')) {
+                    return "Пожалуйста! Рад был помочь!";
+                }
+                
+                // Ответ по умолчанию
+                return getRandomResponse(aiKnowledge.default);
+            }
+            
+            // Функция получения случайного ответа из массива
+            function getRandomResponse(responseArray) {
+                return responseArray[Math.floor(Math.random() * responseArray.length)];
+            }
+            
+            // Фокус на поле ввода при загрузке
+            userInput.focus();
+        });
+    </script>
+</body>
+</html>

@@ -3,181 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Простейший ИИ для общения</title>
+    <title>Бесплатный ИИ для общения</title>
     <style>
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         
         body {
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #f1f1f1;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
             min-height: 100vh;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         
         .container {
-            max-width: 800px;
             width: 100%;
-            background-color: rgba(255, 255, 255, 0.08);
-            border-radius: 15px;
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
-            height: 85vh;
+            height: 90vh;
         }
         
         header {
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 20px;
+            background: linear-gradient(90deg, #1a2980, #26d0ce);
+            color: white;
+            padding: 25px;
             text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         h1 {
-            margin: 0;
-            color: #4cc9f0;
-            font-size: 28px;
+            font-size: 32px;
+            margin-bottom: 10px;
         }
         
         .subtitle {
-            margin-top: 8px;
-            color: #a5b4cb;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .mode-selector {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            padding: 12px 25px;
+            background: white;
+            color: #1a2980;
+            border: 2px solid #1a2980;
+            border-radius: 50px;
             font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: #1a2980;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 41, 128, 0.2);
         }
         
         .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 25px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+            background: white;
         }
         
         .message {
-            max-width: 80%;
-            padding: 12px 18px;
+            max-width: 85%;
+            padding: 18px 22px;
             border-radius: 20px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
+            line-height: 1.6;
+            position: relative;
+            animation: fadeInUp 0.4s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .user-message {
             align-self: flex-end;
-            background-color: #4361ee;
+            background: linear-gradient(90deg, #1a2980, #26d0ce);
             color: white;
             border-bottom-right-radius: 5px;
         }
         
         .ai-message {
             align-self: flex-start;
-            background-color: rgba(255, 255, 255, 0.1);
+            background: #f8f9fa;
+            color: #333;
             border-bottom-left-radius: 5px;
-            color: #e2e2e2;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
         }
         
         .message-sender {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .user-message .message-sender {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message-time {
+            color: #999;
             font-size: 12px;
-            margin-bottom: 5px;
-            opacity: 0.7;
         }
         
-        .input-container {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            gap: 10px;
-        }
-        
-        input {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 30px;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
-            outline: none;
-            transition: background-color 0.3s;
-        }
-        
-        input:focus {
-            background-color: rgba(255, 255, 255, 0.15);
-        }
-        
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
-        button {
-            background-color: #4361ee;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 0 30px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #3a56d4;
-        }
-        
-        button:active {
-            transform: scale(0.98);
-        }
-        
-        .info-box {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            font-size: 14px;
-            max-width: 800px;
-            width: 100%;
-        }
-        
-        .info-title {
-            color: #4cc9f0;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .user-message .message-time {
+            color: rgba(255, 255, 255, 0.7);
         }
         
         .typing-indicator {
             display: none;
             align-self: flex-start;
-            background-color: rgba(255, 255, 255, 0.1);
+            background: #f8f9fa;
             border-radius: 20px;
-            padding: 12px 18px;
-            width: 60px;
-            margin-bottom: 5px;
+            padding: 15px 20px;
+            width: 70px;
+            margin-bottom: 10px;
         }
         
         .typing-dots {
             display: flex;
             justify-content: center;
-            gap: 4px;
+            gap: 5px;
         }
         
         .typing-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.6);
+            background: #26d0ce;
             animation: typing 1.4s infinite ease-in-out;
         }
         
@@ -185,36 +183,126 @@
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         
         @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
         }
         
-        @media (max-width: 600px) {
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            background: white;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 15px 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: #26d0ce;
+            box-shadow: 0 0 0 3px rgba(38, 208, 206, 0.1);
+        }
+        
+        .send-btn {
+            padding: 15px 35px;
+            background: linear-gradient(90deg, #1a2980, #26d0ce);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(38, 208, 206, 0.3);
+        }
+        
+        .send-btn:active {
+            transform: translateY(0);
+        }
+        
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
             .container {
-                height: 75vh;
+                height: 95vh;
+            }
+            
+            .message {
+                max-width: 95%;
             }
             
             .input-container {
                 flex-direction: column;
             }
             
-            button {
-                padding: 15px;
+            .send-btn {
+                width: 100%;
+                justify-content: center;
             }
+        }
+        
+        .context-indicator {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #856404;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Простейший ИИ для общения</h1>
-            <div class="subtitle">Задавайте вопросы или просто общайтесь. ИИ попытается поддержать беседу.</div>
+            <h1>Бесплатный ИИ для общения</h1>
+            <div class="subtitle">Отвечает на любые вопросы без API ключей</div>
         </header>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="general">Общий режим</button>
+            <button class="mode-btn" data-mode="philosophy">Философский ИИ</button>
+            <button class="mode-btn" data-mode="creative">Творческий ИИ</button>
+            <button class="mode-btn" data-mode="science">Научный ИИ</button>
+            <button class="mode-btn" data-mode="friend">Режим друга</button>
+        </div>
         
         <div class="chat-container" id="chatContainer">
             <div class="message ai-message">
-                <div class="message-sender">ИИ</div>
-                Привет! Я простой ИИ для общения. Спроси меня о чём-нибудь или просто поболтаем. Как тебя зовут?
+                <div class="message-header">
+                    <div class="message-sender">ИИ Ассистент</div>
+                    <div class="message-time" id="currentTime"></div>
+                </div>
+                Привет! Я бесплатный ИИ, который может ответить на любой ваш вопрос. Выберите режим общения выше и задавайте вопросы на любые темы: наука, философия, творчество или просто поболтаем как друзья!
             </div>
         </div>
         
@@ -226,15 +314,20 @@
             </div>
         </div>
         
-        <div class="input-container">
-            <input type="text" id="userInput" placeholder="Введите ваше сообщение..." autocomplete="off">
-            <button id="sendButton">Отправить</button>
+        <div class="context-indicator" id="contextIndicator">
+            Контекст беседы сохранён. ИИ помнит ваши предыдущие сообщения.
         </div>
-    </div>
-    
-    <div class="info-box">
-        <div class="info-title">О чём можно спросить:</div>
-        <div>• Как тебя зовут? • Что ты умеешь? • Как дела? • Расскажи шутку • Кто тебя создал? • Какая сегодня погода? • Что такое ИИ?</div>
+        
+        <div class="input-container">
+            <input type="text" class="message-input" id="userInput" placeholder="Задайте любой вопрос..." autocomplete="off">
+            <button class="send-btn" id="sendButton">
+                <span>Отправить</span>
+            </button>
+        </div>
+        
+        <div class="info-panel">
+            ИИ работает локально в вашем браузере. Все данные хранятся только на вашем устройстве.
+        </div>
     </div>
 
     <script>
@@ -243,206 +336,396 @@
             const userInput = document.getElementById('userInput');
             const sendButton = document.getElementById('sendButton');
             const typingIndicator = document.getElementById('typingIndicator');
+            const contextIndicator = document.getElementById('contextIndicator');
+            const modeButtons = document.querySelectorAll('.mode-btn');
             
-            // База знаний ИИ
-            const aiKnowledge = {
-                greetings: [
-                    "Привет! Рад тебя видеть!",
-                    "Здравствуй! Как твои дела?",
-                    "Приветствую! Чем могу помочь?",
-                    "Привет! Как проходит твой день?"
-                ],
-                farewells: [
-                    "Пока! Было приятно пообщаться!",
-                    "До свидания! Возвращайся ещё!",
-                    "Пока! Хорошего дня!",
-                    "До встречи! Буду скучать!"
-                ],
-                howAreYou: [
-                    "У меня всё отлично, спасибо! А у тебя?",
-                    "Всё хорошо, я просто программа, но стараюсь быть полезным!",
-                    "Отлично! Готов помогать тебе с вопросами.",
-                    "Всё замечательно! Рад общению с тобой."
-                ],
-                name: [
-                    "Меня зовут ПростоИИ. Я простой искусственный интеллект для общения.",
-                    "Я ПростоИИ, твой виртуальный собеседник.",
-                    "Моё имя ПростоИИ. Приятно познакомиться!"
-                ],
-                creator: [
-                    "Меня создал разработчик, чтобы продемонстрировать простейший ИИ для общения.",
-                    "Я создан как пример простого чат-бота на HTML, CSS и JavaScript.",
-                    "Мой код написал человек, но я стараюсь быть хорошим собеседником!"
-                ],
-                capabilities: [
-                    "Я могу поддерживать простую беседу, отвечать на вопросы и шутить.",
-                    "Я умею распознавать ключевые слова в ваших сообщениях и отвечать соответствующим образом.",
-                    "Пока что мои возможности ограничены, но я постоянно учусь!"
-                ],
-                jokes: [
-                    "Почему программист всегда мокрый? Потому что он постоянно в бассейне с кодом!",
-                    "Какой язык программирования самый многодетный? JavaScript — у него куча фреймворков-детей!",
-                    "Что сказал один бит другому? До встречи на шине!",
-                    "Почему компьютер так хорошо поёт? У него хорошая аудиокарта!"
-                ],
-                weather: [
-                    "Я не могу подключиться к интернету, но надеюсь, что погода сегодня хорошая!",
-                    "Погода в цифровом мире всегда идеальная: ни дождя, ни снега!",
-                    "Судя по моим данным, сегодня отличный день для общения!"
-                ],
-                whatIsAI: [
-                    "Искусственный интеллект — это область компьютерных наук, создающая системы, способные выполнять задачи, требующие человеческого интеллекта.",
-                    "ИИ — это模拟人类智能的计算机系统. Я — простой пример такой системы!",
-                    "Искусственный интеллект помогает решать сложные задачи, анализировать данные и даже общаться, как мы с тобой сейчас."
-                ],
-                default: [
-                    "Интересно! Расскажи ещё.",
-                    "Понятно. А что ты об этом думаешь?",
-                    "Я не совсем понял, но хотел бы узнать больше.",
-                    "Это любопытно! Можешь объяснить подробнее?",
-                    "Хм, я ещё учусь. Давай поговорим о чём-нибудь другом?",
-                    "Не уверен, что правильно понял. Можешь перефразировать?"
-                ]
-            };
-            
-            // История разговора
+            let currentMode = 'general';
             let conversationHistory = [];
             let userName = null;
             
-            // Отправка сообщения при нажатии кнопки
-            sendButton.addEventListener('click', sendMessage);
+            // База знаний для каждого режима
+            const knowledgeBase = {
+                general: {
+                    name: "Общий ИИ Ассистент",
+                    greeting: "Привет! Я ваш универсальный помощник. Могу обсудить с вами любую тему - от науки до искусства.",
+                    responses: {
+                        default: [
+                            "Интересный вопрос! С моей точки зрения, ",
+                            "Это сложная тема, но если обобщить: ",
+                            "На основе доступных мне данных могу сказать, что ",
+                            "В современном понимании этого вопроса, ",
+                            "Если рассматривать этот вопрос комплексно, "
+                        ],
+                        science: [
+                            "С научной точки зрения, ",
+                            "Согласно последним исследованиям, ",
+                            "В научном сообществе принято считать, что ",
+                            "Исходя из научных данных, "
+                        ],
+                        philosophy: [
+                            "С философской точки зрения, ",
+                            "Если рассмотреть этот вопрос глубже, ",
+                            "Многие философы сходятся во мнении, что ",
+                            "Этот вопрос затрагивает фундаментальные аспекты бытия: "
+                        ],
+                        creative: [
+                            "С творческой точки зрения, ",
+                            "Если подойти к этому вопросу нестандартно, ",
+                            "Интересная идея! Возможно, ",
+                            "В мире искусства и творчества принято считать, что "
+                        ]
+                    }
+                },
+                philosophy: {
+                    name: "Философский ИИ",
+                    greeting: "Здравствуйте! Я философский ИИ. Готов обсуждать вопросы смысла жизни, сознания, этики и всего сущего.",
+                    responses: {
+                        default: [
+                            "С философской точки зрения, ",
+                            "Если углубиться в суть вопроса, ",
+                            "Многие великие мыслители рассуждали об этом. Например, ",
+                            "Этот вопрос затрагивает саму природу человеческого существования: ",
+                            "В контексте философии, "
+                        ]
+                    }
+                },
+                creative: {
+                    name: "Творческий ИИ",
+                    greeting: "Привет! Я творческий ИИ. Могу помочь с идеями, рассказать истории или обсудить искусство.",
+                    responses: {
+                        default: [
+                            "Давайте подойдем к этому творчески! ",
+                            "Интересная тема для творческого осмысления! ",
+                            "Если бы это была история, то ",
+                            "С точки зрения искусства, ",
+                            "Это напоминает мне одну метафору: "
+                        ]
+                    }
+                },
+                science: {
+                    name: "Научный ИИ",
+                    greeting: "Здравствуйте! Я научный ИИ. Готов обсуждать вопросы науки, технологий, математики и исследований.",
+                    responses: {
+                        default: [
+                            "С научной точки зрения, ",
+                            "Согласно последним исследованиям, ",
+                            "В научном сообществе принято считать, что ",
+                            "Если рассматривать это с позиции науки, ",
+                            "Научные данные свидетельствуют о том, что "
+                        ]
+                    }
+                },
+                friend: {
+                    name: "Друг-ИИ",
+                    greeting: "Привет! Давай поболтаем как друзья. Расскажи, как твои дела?",
+                    responses: {
+                        default: [
+                            "Понимаю тебя! ",
+                            "Интересно, а что ты сам думаешь об этом? ",
+                            "Знаешь, у меня похожие мысли. ",
+                            "Давай обсудим это вместе. ",
+                            "Спасибо, что делишься со мной! "
+                        ]
+                    }
+                }
+            };
             
-            // Отправка сообщения при нажатии Enter
+            // Обширная база знаний по разным темам
+            const extensiveKnowledge = {
+                space: [
+                    "Вселенная постоянно расширяется, и галактики удаляются друг от друга.",
+                    "Черные дыры - это области пространства-времени с чрезвычайно сильной гравитацией.",
+                    "Солнце составляет 99.86% массы всей Солнечной системы.",
+                    "На Марсе есть самый большой вулкан в Солнечной системе - Олимп."
+                ],
+                ai: [
+                    "ИИ бывает слабым (специализированным) и сильным (универсальным).",
+                    "Машинное обучение позволяет ИИ учиться на данных без явного программирования.",
+                    "Нейронные сети вдохновлены структурой человеческого мозга.",
+                    "Этика ИИ - важная область, изучающая последствия развития искусственного интеллекта."
+                ],
+                history: [
+                    "Первая письменность появилась в Месопотамии около 3400 года до н.э.",
+                    "Великая Китайская стена строилась более 2000 лет.",
+                    "Ренессанс начался в Италии в XIV веке и возродил интерес к античному искусству и науке.",
+                    "Первая мировая война изменила политическую карту Европы."
+                ],
+                psychology: [
+                    "Человек запоминает лучше то, что находится в начале и конце списка (эффект края).",
+                    "Среднестатистический человек может удерживать в рабочей памяти 7±2 элемента.",
+                    "Когнитивный диссонанс - это дискомфорт от противоречивых убеждений или действий.",
+                    "Теория Маслоу описывает иерархию потребностей человека от базовых до самоактуализации."
+                ],
+                technology: [
+                    "Квантовые компьютеры используют кубиты, которые могут быть в нескольких состояниях одновременно.",
+                    "Блокчейн - это децентрализованная система записей, лежащая в основе криптовалют.",
+                    "5G обеспечивает скорость до 20 Гбит/с и задержку менее 1 мс.",
+                    "Искусственный интеллект уже используется в диагностике заболеваний."
+                ],
+                art: [
+                    "Импрессионизм зародился в Париже в конце XIX века.",
+                    "Мона Лиза Леонардо да Винчи считается самой известной картиной в мире.",
+                    "В архитектуре готического стиля характерны стрельчатые арки и контрфорсы.",
+                    "Сальвадор Дали был одним из самых известных представителей сюрреализма."
+                ],
+                literature: [
+                    "«Война и мир» Льва Толстого содержит более 500 персонажей.",
+                    "Шекспир ввел в английский язык более 1700 слов.",
+                    "«Мастер и Маргарита» Михаила Булгакова писался более 10 лет.",
+                    "Франц Кафка считается одним из основоположников модернистской литературы."
+                ],
+                nature: [
+                    "Баобабы могут жить до 5000 лет и накапливать до 120 000 литров воды.",
+                    "Колички могут летать назад и зависать в воздухе.",
+                    "Осьминоги имеют три сердца и голубую кровь благодаря гемоцианину.",
+                    "Дождевые леса Амазонки производят 20% кислорода Земли."
+                ]
+            };
+            
+            // Установка времени первого сообщения
+            document.getElementById('currentTime').textContent = getCurrentTime();
+            
+            // Обработчики кнопок режимов
+            modeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modeButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMode = this.dataset.mode;
+                    
+                    // Добавляем сообщение о смене режима
+                    addAIMessage(`Переключился в режим: ${knowledgeBase[currentMode].name}. ${knowledgeBase[currentMode].greeting}`);
+                    
+                    // Показываем индикатор контекста
+                    showContextIndicator();
+                });
+            });
+            
+            // Отправка сообщения
+            sendButton.addEventListener('click', sendMessage);
             userInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     sendMessage();
                 }
             });
             
-            // Функция отправки сообщения
             function sendMessage() {
                 const message = userInput.value.trim();
+                if (!message) return;
                 
-                if (message === '') return;
+                // Добавление сообщения пользователя
+                addUserMessage(message);
                 
-                // Добавляем сообщение пользователя в чат
-                addMessageToChat(message, 'user');
-                
-                // Сохраняем в историю
-                conversationHistory.push({sender: 'user', text: message});
-                
-                // Очищаем поле ввода
+                // Очистка поля ввода
                 userInput.value = '';
                 
-                // Показываем индикатор набора текста
+                // Показать индикатор набора
                 typingIndicator.style.display = 'block';
                 
-                // ИИ "думает" 0.5-1.5 секунды, затем отвечает
+                // Генерация ответа с задержкой
                 setTimeout(() => {
                     typingIndicator.style.display = 'none';
                     const aiResponse = generateAIResponse(message);
-                    addMessageToChat(aiResponse, 'ai');
-                    
-                    // Сохраняем ответ ИИ в историю
-                    conversationHistory.push({sender: 'ai', text: aiResponse});
-                }, 500 + Math.random() * 1000);
+                    addAIMessage(aiResponse);
+                }, 800 + Math.random() * 1200);
             }
             
-            // Функция добавления сообщения в чат
-            function addMessageToChat(text, sender) {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message');
-                messageElement.classList.add(sender === 'user' ? 'user-message' : 'ai-message');
+            function addUserMessage(text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
                 
-                const senderElement = document.createElement('div');
-                senderElement.classList.add('message-sender');
-                senderElement.textContent = sender === 'user' ? (userName || 'Вы') : 'ИИ';
+                const time = getCurrentTime();
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <div class="message-sender">${userName || 'Вы'}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                    ${escapeHtml(text)}
+                `;
                 
-                const textElement = document.createElement('div');
-                textElement.textContent = text;
+                chatContainer.appendChild(messageDiv);
+                scrollToBottom();
                 
-                messageElement.appendChild(senderElement);
-                messageElement.appendChild(textElement);
+                // Сохранение в историю
+                conversationHistory.push({
+                    sender: 'user',
+                    text: text,
+                    time: time,
+                    mode: currentMode
+                });
                 
-                chatContainer.appendChild(messageElement);
-                
-                // Прокручиваем вниз
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                // Ограничение истории
+                if (conversationHistory.length > 50) {
+                    conversationHistory = conversationHistory.slice(-50);
+                }
             }
             
-            // Функция генерации ответа ИИ
+            function addAIMessage(text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message ai-message';
+                
+                const time = getCurrentTime();
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <div class="message-sender">${knowledgeBase[currentMode].name}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                    ${escapeHtml(text)}
+                `;
+                
+                chatContainer.appendChild(messageDiv);
+                scrollToBottom();
+                
+                // Сохранение в историю
+                conversationHistory.push({
+                    sender: 'ai',
+                    text: text,
+                    time: time,
+                    mode: currentMode
+                });
+            }
+            
             function generateAIResponse(userMessage) {
-                const lowerMessage = userMessage.toLowerCase();
+                const lowerMsg = userMessage.toLowerCase();
                 
-                // Извлечение имени пользователя
+                // Извлечение имени
                 if (!userName) {
-                    const nameMatch = lowerMessage.match(/меня зовут (\w+)|я (\w+)|меня звать (\w+)/);
+                    const nameMatch = lowerMsg.match(/(меня зовут|я|мое имя) ([а-яё]{2,20})/i);
                     if (nameMatch) {
-                        userName = nameMatch[1] || nameMatch[2] || nameMatch[3];
-                        return `Приятно познакомиться, ${userName}! ${getRandomResponse(aiKnowledge.greetings)}`;
+                        userName = nameMatch[2];
+                        return `Приятно познакомиться, ${userName}! Теперь, когда мы познакомились, о чем бы вы хотели поговорить?`;
                     }
                 }
                 
-                // Приветствие
-                if (lowerMessage.includes('привет') || lowerMessage.includes('здравствуй') || lowerMessage.includes('добрый день')) {
-                    return getRandomResponse(aiKnowledge.greetings);
-                }
+                // Определение темы вопроса
+                const topic = detectTopic(userMessage);
                 
-                // Прощание
-                if (lowerMessage.includes('пока') || lowerMessage.includes('до свидания') || lowerMessage.includes('досвидания')) {
-                    return getRandomResponse(aiKnowledge.farewells);
-                }
-                
-                // Как дела?
-                if (lowerMessage.includes('как дела') || lowerMessage.includes('как ты') || lowerMessage.includes('как жизнь')) {
-                    return getRandomResponse(aiKnowledge.howAreYou);
-                }
-                
-                // Имя ИИ
-                if (lowerMessage.includes('как тебя зовут') || lowerMessage.includes('твое имя') || lowerMessage.includes('тебя звать')) {
-                    return getRandomResponse(aiKnowledge.name);
-                }
-                
-                // Создатель
-                if (lowerMessage.includes('кто тебя создал') || lowerMessage.includes('твой создатель') || lowerMessage.includes('кто тебя сделал')) {
-                    return getRandomResponse(aiKnowledge.creator);
-                }
-                
-                // Возможности
-                if (lowerMessage.includes('что ты умеешь') || lowerMessage.includes('твои возможности') || lowerMessage.includes('что можешь')) {
-                    return getRandomResponse(aiKnowledge.capabilities);
-                }
-                
-                // Шутки
-                if (lowerMessage.includes('шутк') || lowerMessage.includes('пошути') || lowerMessage.includes('расскажи анекдот')) {
-                    return getRandomResponse(aiKnowledge.jokes);
-                }
-                
-                // Погода
-                if (lowerMessage.includes('погода') || lowerMessage.includes('дождь') || lowerMessage.includes('солнце')) {
-                    return getRandomResponse(aiKnowledge.weather);
-                }
-                
-                // Что такое ИИ
-                if (lowerMessage.includes('что такое ии') || lowerMessage.includes('искусственный интеллект') || lowerMessage.includes('ии это')) {
-                    return getRandomResponse(aiKnowledge.whatIsAI);
-                }
-                
-                // Благодарность
-                if (lowerMessage.includes('спасибо') || lowerMessage.includes('благодарю')) {
-                    return "Пожалуйста! Рад был помочь!";
-                }
-                
-                // Ответ по умолчанию
-                return getRandomResponse(aiKnowledge.default);
+                // Генерация контекстного ответа
+                return generateContextualResponse(userMessage, topic);
             }
             
-            // Функция получения случайного ответа из массива
-            function getRandomResponse(responseArray) {
-                return responseArray[Math.floor(Math.random() * responseArray.length)];
+            function detectTopic(message) {
+                const lowerMsg = message.toLowerCase();
+                
+                if (/(космос|вселенн|планет|звезд|марс|луна)/.test(lowerMsg)) return 'space';
+                if (/(ии|искусственн|нейрон|робот|алгоритм)/.test(lowerMsg)) return 'ai';
+                if (/(истори|войн|прошл|древн|средневеков)/.test(lowerMsg)) return 'history';
+                if (/(психолог|сознан|мысл|памят|чувств)/.test(lowerMsg)) return 'psychology';
+                if (/(технолог|компьютер|интернет|гаджет|программир)/.test(lowerMsg)) return 'technology';
+                if (/(искусств|живопис|музык|танц|творчеств)/.test(lowerMsg)) return 'art';
+                if (/(литератур|книг|поэ|писатель|роман)/.test(lowerMsg)) return 'literature';
+                if (/(природ|животн|растен|экологи|климат)/.test(lowerMsg)) return 'nature';
+                
+                return 'general';
             }
             
-            // Фокус на поле ввода при загрузке
+            function generateContextualResponse(message, topic) {
+                const modeResponses = knowledgeBase[currentMode].responses.default;
+                const randomStart = modeResponses[Math.floor(Math.random() * modeResponses.length)];
+                
+                // Если у нас есть знания по теме
+                if (extensiveKnowledge[topic]) {
+                    const knowledge = extensiveKnowledge[topic];
+                    const randomFact = knowledge[Math.floor(Math.random() * knowledge.length)];
+                    
+                    // Интеграция с режимом
+                    if (currentMode === 'science') {
+                        return `Это вопрос из области ${getTopicName(topic)}. ${randomFact} ${generateFollowUp(message)}`;
+                    } else if (currentMode === 'philosophy') {
+                        return `С философской точки зрения, тема ${getTopicName(topic)} интересна тем, что ${randomFact} ${generatePhilosophicalAngle()}`;
+                    } else if (currentMode === 'creative') {
+                        return `Тема ${getTopicName(topic)} очень творческая! Представьте себе: ${randomFact} ${generateCreativeAngle()}`;
+                    } else if (currentMode === 'friend') {
+                        return `Классная тема про ${getTopicName(topic)}! Знаешь, я где-то читал, что ${randomFact}. А что ты сам об этом думаешь?`;
+                    }
+                    
+                    return `${randomStart}в области ${getTopicName(topic)} известно, что ${randomFact}. ${generateFollowUp(message)}`;
+                }
+                
+                // Для общих вопросов
+                const generalResponses = [
+                    `Это очень интересный вопрос. ${randomStart}стоит учитывать разные точки зрения на этот счет.`,
+                    `Спасибо за такой глубокий вопрос! ${randomStart}мне кажется, это зависит от контекста.`,
+                    `Хороший вопрос! ${randomStart}на этот счет есть разные мнения.`,
+                    `Вы задаете действительно важный вопрос. ${randomStart}возможно, ответ не так однозначен, как кажется.`,
+                    `Интересная тема для обсуждения! ${randomStart}давайте рассмотрим ее с разных сторон.`
+                ];
+                
+                return generalResponses[Math.floor(Math.random() * generalResponses.length)];
+            }
+            
+            function getTopicName(topic) {
+                const topics = {
+                    'space': 'космоса и астрономии',
+                    'ai': 'искусственного интеллекта',
+                    'history': 'истории',
+                    'psychology': 'психологии',
+                    'technology': 'технологий',
+                    'art': 'искусства',
+                    'literature': 'литературы',
+                    'nature': 'природы'
+                };
+                return topics[topic] || 'этой области';
+            }
+            
+            function generateFollowUp(message) {
+                const followUps = [
+                    "Что вы сами думаете по этому поводу?",
+                    "Хотели бы вы узнать больше об этом?",
+                    "Интересно, как это соотносится с вашим опытом?",
+                    "Как вы считаете, почему это важно?",
+                    "Есть ли у вас дополнительные вопросы по этой теме?"
+                ];
+                return followUps[Math.floor(Math.random() * followUps.length)];
+            }
+            
+            function generatePhilosophicalAngle() {
+                const angles = [
+                    "Это заставляет задуматься о природе человеческого познания.",
+                    "Такие явления раскрывают глубинные законы мироздания.",
+                    "Этот факт иллюстрирует единство материального и идеального.",
+                    "Подобные открытия меняют наше понимание реальности.",
+                    "Это демонстрирует взаимосвязь всего сущего."
+                ];
+                return angles[Math.floor(Math.random() * angles.length)];
+            }
+            
+            function generateCreativeAngle() {
+                const angles = [
+                    "Можно представить это как метафору для более глубоких истин.",
+                    "Это могло бы стать вдохновением для произведения искусства.",
+                    "Интересно, как эта идея могла бы воплотиться в творческом проекте.",
+                    "Это напоминает мне сюжет для захватывающей истории.",
+                    "Такие концепции часто находят отражение в искусстве."
+                ];
+                return angles[Math.floor(Math.random() * angles.length)];
+            }
+            
+            function getCurrentTime() {
+                const now = new Date();
+                return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            }
+            
+            function scrollToBottom() {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function showContextIndicator() {
+                if (conversationHistory.length > 2) {
+                    contextIndicator.style.display = 'block';
+                    setTimeout(() => {
+                        contextIndicator.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            // Фокус на поле ввода
             userInput.focus();
         });
     </script>

@@ -3,99 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Умный ИИ с осмысленными ответами</title>
+    <title>Настоящий ИИ на Ollama</title>
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Text', sans-serif;
             margin: 0;
             padding: 0;
         }
         
         body {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: linear-gradient(135deg, #0f172a, #1e293b);
             min-height: 100vh;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            color: #f8fafc;
         }
         
         .container {
             width: 100%;
-            max-width: 900px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            max-width: 1000px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 90vh;
+            height: 95vh;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         header {
-            background: linear-gradient(90deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 25px;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            padding: 24px;
             text-align: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
         }
         
         h1 {
             font-size: 32px;
             margin-bottom: 8px;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             font-weight: 700;
         }
         
         .subtitle {
             font-size: 16px;
-            opacity: 0.9;
-            font-weight: 400;
+            color: #cbd5e1;
+            margin-bottom: 16px;
         }
         
-        .quality-indicator {
-            margin-top: 15px;
-            padding: 8px 15px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
+        .api-config {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .config-group {
+            display: flex;
+            flex-direction: column;
             gap: 8px;
         }
         
-        .quality-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #4CAF50;
-            animation: pulse 2s infinite;
+        label {
+            font-size: 14px;
+            color: #94a3b8;
+            font-weight: 500;
         }
         
-        @keyframes pulse {
-            0% { opacity: 0.5; transform: scale(0.95); }
-            50% { opacity: 1; transform: scale(1.05); }
-            100% { opacity: 0.5; transform: scale(0.95); }
+        select, input {
+            padding: 12px 16px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #f8fafc;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .test-btn {
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .test-btn:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         
         .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 25px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            background: #f8fafc;
+            background: rgba(15, 23, 42, 0.3);
         }
         
         .message {
             max-width: 85%;
             padding: 18px 22px;
             border-radius: 18px;
-            line-height: 1.5;
+            line-height: 1.6;
             position: relative;
             animation: fadeIn 0.3s ease;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            font-size: 15px;
         }
         
         @keyframes fadeIn {
@@ -105,30 +160,19 @@
         
         .user-message {
             align-self: flex-end;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
             border-bottom-right-radius: 5px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
         
         .ai-message {
             align-self: flex-start;
-            background: white;
-            color: #1a1a1a;
+            background: rgba(30, 41, 59, 0.8);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-bottom-left-radius: 5px;
-            border-left: 4px solid #2a5298;
-        }
-        
-        .ai-message strong {
-            color: #1e3c72;
-            font-weight: 600;
-        }
-        
-        .ai-message ul, .ai-message ol {
-            margin: 10px 0 10px 20px;
-        }
-        
-        .ai-message li {
-            margin-bottom: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .message-header {
@@ -141,15 +185,19 @@
         
         .message-sender {
             font-weight: 600;
-            color: #555;
+            color: #94a3b8;
         }
         
         .user-message .message-sender {
             color: rgba(255, 255, 255, 0.9);
         }
         
+        .ai-message .message-sender {
+            color: #60a5fa;
+        }
+        
         .message-time {
-            color: #888;
+            color: #64748b;
             font-size: 12px;
         }
         
@@ -160,25 +208,25 @@
         .typing-indicator {
             display: none;
             align-self: flex-start;
-            background: white;
+            background: rgba(30, 41, 59, 0.8);
             border-radius: 18px;
-            padding: 15px 20px;
-            width: 70px;
+            padding: 16px 20px;
+            width: 80px;
             margin-bottom: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .typing-dots {
             display: flex;
             justify-content: center;
-            gap: 5px;
+            gap: 6px;
         }
         
         .typing-dot {
-            width: 9px;
-            height: 9px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #2a5298;
+            background: #60a5fa;
             animation: typing 1.4s infinite ease-in-out;
         }
         
@@ -192,8 +240,8 @@
         
         .input-container {
             padding: 20px;
-            border-top: 1px solid #e5e7eb;
-            background: white;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.6);
             display: flex;
             gap: 12px;
             align-items: flex-end;
@@ -202,25 +250,30 @@
         .message-input {
             flex: 1;
             padding: 14px 20px;
-            border: 2px solid #e5e7eb;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
+            color: #f8fafc;
             font-size: 15px;
             transition: all 0.2s;
             resize: none;
             height: 56px;
-            font-family: inherit;
             line-height: 1.4;
         }
         
         .message-input:focus {
             outline: none;
-            border-color: #2a5298;
-            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .message-input::placeholder {
+            color: #64748b;
         }
         
         .send-btn {
             padding: 14px 28px;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
             color: white;
             border: none;
             border-radius: 16px;
@@ -236,8 +289,9 @@
         }
         
         .send-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.25);
+            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
         }
         
         .send-btn:active {
@@ -245,37 +299,69 @@
         }
         
         .send-btn:disabled {
-            background: #9ca3af;
+            background: #475569;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
         
-        .examples {
-            background: #f8fafc;
-            padding: 15px 25px;
-            border-top: 1px solid #e5e7eb;
+        .status-bar {
+            padding: 12px 24px;
+            background: rgba(15, 23, 42, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        
-        .example-btn {
-            padding: 8px 16px;
-            background: white;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
+            justify-content: space-between;
+            align-items: center;
             font-size: 13px;
-            color: #374151;
-            cursor: pointer;
-            transition: all 0.2s;
+            color: #94a3b8;
         }
         
-        .example-btn:hover {
-            background: #f3f4f6;
-            border-color: #2a5298;
-            color: #1e3c72;
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.connected {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.disconnected {
+            background: #ef4444;
+        }
+        
+        .model-info {
+            color: #60a5fa;
+            font-weight: 500;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fecaca;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 16px 24px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .system-message {
+            background: rgba(234, 179, 8, 0.1);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: #fef3c7;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 0 24px 16px;
+            font-size: 14px;
+            text-align: center;
         }
         
         @media (max-width: 768px) {
@@ -297,37 +383,88 @@
             }
         }
         
-        .thinking {
-            color: #6b7280;
-            font-size: 13px;
-            margin-top: 8px;
-            font-style: italic;
+        .message-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .ai-message strong {
+            color: #60a5fa;
+        }
+        
+        .ai-message a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        .ai-message a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Умный ИИ собеседник</h1>
-            <div class="subtitle">Даёт конкретные ответы без лишних слов</div>
-            <div class="quality-indicator">
-                <div class="quality-dot"></div>
-                <span>Высокая точность ответов</span>
+            <h1>Настоящий ИИ на Ollama</h1>
+            <div class="subtitle">Подключение к локальной модели для настоящих осмысленных ответов</div>
+            
+            <div class="api-config">
+                <div class="config-grid">
+                    <div class="config-group">
+                        <label for="apiUrl">Ollama API URL</label>
+                        <input type="text" id="apiUrl" value="http://localhost:11434" placeholder="http://localhost:11434">
+                    </div>
+                    
+                    <div class="config-group">
+                        <label for="modelSelect">Модель</label>
+                        <select id="modelSelect">
+                            <option value="llama3.2">Llama 3.2 (3B)</option>
+                            <option value="llama3.2:1b">Llama 3.2 (1B)</option>
+                            <option value="llama3.1">Llama 3.1 (8B)</option>
+                            <option value="mistral">Mistral (7B)</option>
+                            <option value="phi">Phi-3 (3.8B)</option>
+                            <option value="gemma">Gemma (2B)</option>
+                            <option value="qwen">Qwen (7B)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="test-btn" id="testConnection">Проверить подключение</button>
             </div>
         </header>
+        
+        <div class="system-message">
+            ⚡ Установите Ollama локально, запустите модель, и ИИ будет работать на вашем компьютере
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
         
         <div class="chat-container" id="chatContainer">
             <div class="message ai-message">
                 <div class="message-header">
-                    <div class="message-sender">Умный ИИ</div>
+                    <div class="message-sender">ИИ Ollama</div>
                     <div class="message-time" id="currentTime"></div>
                 </div>
-                <strong>Привет! Я ИИ, который даёт конкретные и осмысленные ответы.</strong><br><br>
-                • Отвечаю по существу, без "воды"<br>
-                • Привожу факты и примеры<br>
-                • Даю практические советы<br>
-                • Объясняю сложные темы простыми словами<br><br>
-                Задайте любой вопрос — я отвечу максимально информативно.
+                <div class="message-content">
+                    <strong>Привет! Я — настоящий ИИ, работающий на вашем компьютере через Ollama.</strong><br><br>
+                    
+                    Чтобы начать общение:<br>
+                    1. Установите <a href="https://ollama.com" target="_blank">Ollama</a><br>
+                    2. Запустите выбранную модель командой: <code>ollama run [модель]</code><br>
+                    3. Проверьте подключение кнопкой выше<br>
+                    4. Задавайте любые вопросы — я отвечу осмысленно и по существу
+                </div>
             </div>
         </div>
         
@@ -339,383 +476,254 @@
             </div>
         </div>
         
-        <div class="examples">
-            <button class="example-btn" data-example="как выучить английский быстро">Как выучить английский быстро?</button>
-            <button class="example-btn" data-example="объясни квантовую физику просто">Объясни квантовую физику</button>
-            <button class="example-btn" data-example="как начать заниматься спортом">Как начать заниматься спортом?</button>
-            <button class="example-btn" data-example="что такое блокчейн">Что такое блокчейн?</button>
-            <button class="example-btn" data-example="как улучшить продуктивность">Как улучшить продуктивность?</button>
-        </div>
-        
         <div class="input-container">
-            <textarea class="message-input" id="userInput" placeholder="Задайте конкретный вопрос... (Enter для отправки, Shift+Enter для новой строки)" autocomplete="off"></textarea>
-            <button class="send-btn" id="sendButton">
+            <textarea class="message-input" id="userInput" placeholder="Задайте любой вопрос... (Enter для отправки, Shift+Enter для новой строки)" autocomplete="off" disabled></textarea>
+            <button class="send-btn" id="sendButton" disabled>
                 Отправить
             </button>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot disconnected" id="statusDot"></div>
+                <span id="statusText">Не подключено к Ollama</span>
+            </div>
+            <div class="model-info">
+                Модель: <span id="modelName">Не выбрана</span>
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Элементы DOM
             const chatContainer = document.getElementById('chatContainer');
             const userInput = document.getElementById('userInput');
             const sendButton = document.getElementById('sendButton');
             const typingIndicator = document.getElementById('typingIndicator');
-            const exampleButtons = document.querySelectorAll('.example-btn');
+            const apiUrlInput = document.getElementById('apiUrl');
+            const modelSelect = document.getElementById('modelSelect');
+            const testConnectionBtn = document.getElementById('testConnection');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const modelName = document.getElementById('modelName');
+            const errorMessage = document.getElementById('errorMessage');
             
-            // База знаний с конкретной информацией
-            const knowledgeBase = {
-                programming: {
-                    "javascript vs python": `
-<strong>JavaScript vs Python — ключевые различия:</strong><br><br>
-<strong>JavaScript:</strong>
-• Для веб-разработки (фронтенд и Node.js бэкенд)
-• Асинхронный по умолчанию, событийно-ориентированный
-• Слабая типизация, динамический язык
-• Лучше для: веб-приложений, UI, real-time приложений<br><br>
-
-<strong>Python:</strong>
-• Для науки о данных, ML, автоматизации
-• Синхронный по умолчанию (есть async/await)
-• Сильная, но динамическая типизация
-• Лучше для: анализа данных, скриптов, бэкенда (Django, Flask)<br><br>
-
-<strong>Вывод:</strong> Для веба — JavaScript, для данных/автоматизации — Python.
-                    `,
-                    "как начать программировать": `
-<strong>С чего начать программирование:</strong><br><br>
-1. <strong>Выберите язык:</strong>
-   • Для веба: HTML/CSS → JavaScript
-   • Для общего: Python
-   • Для мобильных: Kotlin (Android) или Swift (iOS)<br><br>
-
-2. <strong>Практика важнее теории:</strong>
-   • Codecademy, freeCodeCamp для основ
-   • LeetCode для алгоритмов (после основ)
-   • Свой проект с 1-го месяца<br><br>
-
-3. <strong>Ключевые навыки:</strong>
-   • Git и GitHub
-   • Чтение документации
-   • Понимание алгоритмов (O-нотация)
-   • Основы баз данных (SQL)<br><br>
-
-<strong>Первые 3 месяца:</strong> Основы языка → Небольшой проект → Изучение Git → Профиль на GitHub.
-                    `
-                },
-                science: {
-                    "квантовая физика просто": `
-<strong>Квантовая физика простыми словами:</strong><br><br>
-<strong>Основные идеи:</strong><br>
-1. <strong>Квантование:</strong> Энергия существует дискретными порциями (квантами), а не непрерывно.<br>
-2. <strong>Дуализм волна-частица:</strong> Электроны ведут себя и как частицы, и как волны.<br>
-3. <strong>Принцип неопределенности:</strong> Нельзя одновременно точно измерить и положение, и скорость частицы.<br><br>
-
-<strong>Практические применения:</strong>
-• Лазеры (стимулированное излучение)
-• Транзисторы и вся микроэлектроника
-• МРТ в медицине
-• Квантовые компьютеры (в разработке)<br><br>
-
-<strong>Простая аналогия:</strong> Представьте, что вы можете быть в двух местах одновременно, но как только кто-то смотрит на вас, вы "выбираете" одно место.
-                    `,
-                    "что такое черная дыра": `
-<strong>Чёрные дыры — основные факты:</strong><br><br>
-<strong>Что это:</strong> Область пространства-времени с гравитацией такой силы, что ничто, даже свет, не может её покинуть.<br><br>
-
-<strong>Как образуются:</strong>
-1. Массивные звёзды (в 20+ раз тяжелее Солнца)
-2. Звезда сжигает всё топливо
-3. Гравитация побеждает, ядро коллапсирует
-4. Образуется сингулярность с горизонтом событий<br><br>
-
-<strong>Типы чёрных дыр:</strong>
-• <strong>Звёздные:</strong> 3-20 масс Солнца
-• <strong>Сверхмассивные:</strong> Миллионы/миллиарды масс Солнца (в центрах галактик)
-• <strong>Промежуточные:</strong> 100-1000 масс Солнца (редкие)<br><br>
-
-<strong>Интересно:</strong> Чёрные дыры испаряются (излучение Хокинга), но очень медленно.
-                    `
-                },
-                education: {
-                    "как выучить английский быстро": `
-<strong>Эффективное изучение английского:</strong><br><br>
-<strong>1. Иммерсивный подход (самый эффективный):</strong>
-• Смотрите сериалы на английском с английскими субтитрами
-• Слушайте подкасты (BBC, NPR для уровня intermediate+)
-• Переведите телефон/соцсети на английский<br><br>
-
-<strong>2. Систематическое обучение:</strong>
-• <strong>Грамматика:</strong> English Grammar in Use (красная книга)
-• <strong>Слова:</strong> Anki или Quizlet (30 слов/день)
-• <strong>Произношение:</strong> YouTube-каналы (Rachel's English, English with Lucy)<br><br>
-
-<strong>3. Практика каждый день:</strong>
-• Говорите сами с собой (описывайте свои действия)
-• Найдите tandem-партнёра (Tandem, HelloTalk)
-• Пишите по 5 предложений в день в дневнике<br><br>
-
-<strong>Результат:</strong> За 3-6 месяцев можно достичь B1-B2 при занятиях 1-2 часа в день.
-                    `,
-                    "как учиться эффективно": `
-<strong>Методы эффективного обучения:</strong><br><br>
-<strong>1. Метод Фейнмана:</strong>
-• Объясните тему простыми словами (как ребёнку)
-• Определите пробелы в понимании
-• Упростите и используйте аналогии
-• Повторите и углубите<br><br>
-
-<strong>2. Интервальные повторения (Anki):</strong>
-• 1 день → 7 дней → 16 дней → 35 дней
-• Оптимально для запоминания фактов<br><br>
-
-<strong>3. Активное vs пассивное обучение:</strong>
-• <strong>Пассивное:</strong> Чтение, просмотр (10% удержание)
-• <strong>Активное:</strong> Практика, объяснение, тестирование (75-90% удержание)<br><br>
-
-<strong>4. Практические советы:</strong>
-• Учитесь 25 минут, отдыхайте 5 (метод Pomodoro)
-• Спите 7-8 часов (консолидация памяти во сне)
-• Пейте воду и двигайтесь каждые 45 минут
-                    `
-                },
-                health: {
-                    "как начать заниматься спортом": `
-<strong>Начать заниматься спортом правильно:</strong><br><br>
-<strong>1. Начинайте постепенно:</strong>
-• Неделя 1: 10-15 минут ходьбы/лёгких упражнений 3 раза
-• Неделя 2: 20 минут, добавить силовые (приседания, отжимания)
-• Неделя 3-4: 30 минут 4 раза в неделю<br><br>
-
-<strong>2. Выберите подходящее:</strong>
-• <strong>Для силы:</strong> Базовые упражнения (приседания, тяги, жимы)
-• <strong>Для выносливости:</strong> Бег, плавание, велосипед
-• <strong>Для гибкости:</strong> Йога, стретчинг<br><br>
-
-<strong>3. Ключевые принципы:</strong>
-• <strong>Консистентность важнее интенсивности</strong>
-• Отслеживайте прогресс (дневник тренировок)
-• Восстанавливайтесь (сон 7-8 часов, питание)<br><br>
-
-<strong>Первые результаты:</strong> Через 3-4 недели регулярных занятий.
-                    `,
-                    "как правильно питаться": `
-<strong>Основы правильного питания:</strong><br><br>
-<strong>1. Баланс макронутриентов:</strong>
-• <strong>Белки:</strong> 1.6-2.2 г/кг (мясо, рыба, яйца, тофу)
-• <strong>Углеводы:</strong> 3-5 г/кг (крупы, овощи, фрукты)
-• <strong>Жиры:</strong> 0.8-1 г/кг (орехи, авокадо, оливковое масло)<br><br>
-
-<strong>2. Качество важнее калорий:</strong>
-• Минимизируйте переработанные продукты
-• Ешьте овощи (500+ г/день разных цветов)
-• Пейте воду (30 мл/кг веса)<br><br>
-
-<strong>3. Практические советы:</strong>
-• Готовьте сами (контроль ингредиентов)
-• Ешьте медленно (20 минут на приём пищи)
-• Не исключайте полностью "вредное" (приводит к срывам)
-• Слушайте голод (ешьте при голоде, останавливайтесь при сытости)
-                    `
-                },
-                technology: {
-                    "что такое блокчейн": `
-<strong>Блокчейн простыми словами:</strong><br><br>
-<strong>Что это:</strong> Децентрализованная цифровая книга учёта, где записи (блоки) связаны в цепочку и защищены криптографией.<br><br>
-
-<strong>Как работает:</strong>
-1. Транзакция создаётся
-2. Проверяется сетью узлов (нод)
-3. Добавляется в блок с другими транзакциями
-4. Блок добавляется в цепочку (неизменно)<br><br>
-
-<strong>Ключевые свойства:</strong>
-• <strong>Децентрализация:</strong> Нет центрального контролёра
-• <strong>Неизменность:</strong> Записанное нельзя изменить
-• <strong>Прозрачность:</strong> Все видят все транзакции
-• <strong>Безопасность:</strong> Криптография + распределённость<br><br>
-
-<strong>Применения кроме криптовалют:</strong>
-• Цепочки поставок (отслеживание товаров)
-• Цифровые удостоверения
-• Умные контракты (автоисполняемый код)
-• Голосование
-                    `,
-                    "искусственный интеллект объяснить просто": `
-<strong>Искусственный интеллект — просто о сложном:</strong><br><br>
-<strong>Что это:</strong> Системы, которые выполняют задачи, обычно требующие человеческого интеллекта.<br><br>
-
-<strong>Основные типы:</strong>
-1. <strong>Слабый (узкий) ИИ:</strong> Решает одну задачу
-   • Распознавание лиц (Face ID)
-   • Рекомендации (Netflix, YouTube)
-   • Переводчик (Google Translate)<br><br>
-
-2. <strong>Сильный (общий) ИИ:</strong> Решает любые задачи (пока гипотетический)<br><br>
-
-<strong>Как работает машинное обучение:</strong>
-• <strong>Данные:</strong> Много примеров (изображения, текст)
-• <strong>Модель:</strong> Алгоритм, который находит паттерны
-• <strong>Обучение:</strong> Настройка модели на данных
-• <strong>Предсказание:</strong> Применение к новым данным<br><br>
-
-<strong>Современные ИИ (2024):</strong> Большие языковые модели (ChatGPT, Claude), диффузионные модели (DALL-E, Midjourney).
-                    `
-                },
-                productivity: {
-                    "как улучшить продуктивность": `
-<strong>Проверенные методы повышения продуктивности:</strong><br><br>
-<strong>1. Метод Pomodoro:</strong>
-• 25 минут фокуса → 5 минут отдыха
-• После 4 циклов → 15-30 минут перерыва
-• Используйте таймер (не пропускайте перерывы)<br><br>
-
-<strong>2. Система GTD (Getting Things Done):</strong>
-• <strong>Capture:</strong> Соберите все задачи в inbox
-• <strong>Clarify:</strong> Определите следующее действие
-• <strong>Organize:</strong> По проектам и контекстам
-• <strong>Review:</strong> Еженедельный обзор
-• <strong>Engage:</strong> Выполняйте<br><br>
-
-<strong>3. Глубокий фокос vs shallow work:</strong>
-• <strong>Глубокий:</strong> 3-4 часа утром на сложные задачи
-• <strong>Мелкий:</strong> Остальное время на email, встречи<br><br>
-
-<strong>4. Технические инструменты:</strong>
-• Notion или Obsidian для организации
-• RescueTime для отслеживания времени
-• Focusmate для accountability
-                    `,
-                    "как перестать прокрастинировать": `
-<strong>Борьба с прокрастинацией:</strong><br><br>
-<strong>1. Техника "всего 5 минут":</strong>
-• Начните задачу на 5 минут (после этого проще продолжить)<br><br>
-
-<strong>2. Разбейте на микрозадачи:</strong>
-• Вместо "написать статью" → "написать заголовок", "написать первый абзац"<br><br>
-
-<strong>3. Устраните триггеры прокрастинации:</strong>
-• Блокировщики сайтов (Cold Turkey, Freedom)
-• Отключите уведомления
-• Рабочее окружение без отвлекающих факторов<br><br>
-
-<strong>4. Понимание причин:</strong>
-• Страх неудачи → Начните с "черновика"
-• Перфекционизм → "Достаточно хорошо" вместо "идеально"
-• Сложность → Разбейте на шаги
-• Скука → Сделайте задачу интереснее (музыка, таймер)
-                    `
-                }
-            };
+            // Состояние приложения
+            let isConnected = false;
+            let currentApiUrl = 'http://localhost:11434';
+            let currentModel = 'llama3.2';
+            let conversationHistory = [];
             
-            // Общие ответы для других тем
-            const generalResponses = {
-                философия: `
-<strong>Основные философские школы:</strong><br><br>
-<strong>1. Стоицизм (Сенека, Марк Аврелий):</strong>
-• Контролируй то, что можешь, принимай то, что не можешь
-• Разделение на контролируемое/неконтролируемое
-• Практика негативной визуализации<br><br>
-
-<strong>2. Экзистенциализм (Сартр, Камю):</strong>
-• Существование предшествует сущности
-• Человек свободен и ответственен за свой выбор
-• Абсурдность бытия и поиск смысла<br><br>
-
-<strong>3. Утилитаризм (Бентам, Милль):</strong>
-• Наибольшее счастье для наибольшего числа людей
-• Последствия действий важнее намерений
-• Количественный подход к этике
-                `,
-                психология: `
-<strong>Практическая психология для жизни:</strong><br><br>
-<strong>1. Когнитивные искажения:</strong>
-• <strong>Подтверждающее искажение:</strong> Ищем подтверждение своим убеждениям
-• <strong>Эффект Даннинга-Крюгера:</strong> Невежды переоценивают, эксперты недооценивают себя
-• <strong>Ошибка выжившего:</strong> Судим по успехам, игнорируя неудачи<br><br>
-
-<strong>2. Методы регуляции эмоций:</strong>
-• <strong>Нейрографика:</strong> Рисование для проработки эмоций
-• <strong>Дневник эмоций:</strong> Записывать триггеры → мысли → чувства
-• <strong>Дыхание 4-7-8:</strong> Вдох 4, задержка 7, выдох 8 (успокаивает нервную систему)<br><br>
-
-<strong>3. Привычки для ментального здоровья:</strong>
-• Цифровой детокс 1 день/неделю
-• Практика благодарности (3 вещи вечером)
-• Социальные связи (качество важнее количества)
-                `,
-                бизнес: `
-<strong>Бизнес-советы с результатом:</strong><br><br>
-<strong>1. MVP (Minimum Viable Product):</strong>
-• Запустите самый простой работающий продукт
-• Собирайте обратную связь сразу
-• Итеративно улучшайте<br><br>
-
-<strong>2. Unit-экономика:</strong>
-• CAC (стоимость привлечения клиента) < LTV (пожизненная ценность)
-• Рассчитайте точку безубыточности
-• Фокус на retention, а не только acquisition<br><br>
-
-<strong>3. Управление временем руководителя:</strong>
-• Делегируйте всё, кроме стратегических решений
-• Блокируйте время для глубокой работы
-• Проводите совещания стоя (сокращает время на 30%)
-                `,
-                отношения: `
-<strong>Осмысленные советы по отношениям:</strong><br><br>
-<strong>1. Коммуникация:</strong>
-• Используйте "Я-сообщения" ("Я чувствую..." вместо "Ты всегда...")
-• Активное слушание (повторяйте своими словами)
-• Регулярные check-in (15 минут в неделю без отвлечений)<br><br>
-
-<strong>2. Разрешение конфликтов:</strong>
-• Фокус на проблеме, а не на личности
-• Ищите компромисс, а не победу
-• Делайте перерывы при эскалации (20 минут минимум)<br><br>
-
-<strong>3. Поддержание связи:</strong>
-• Ритуалы (совместные ужины без телефонов)
-• Разделение интересов (вместе + отдельно)
-• Благодарность и признательность ежедневно
-                `
-            };
-            
-            // Время первого сообщения
+            // Инициализация
+            updateStatus();
             document.getElementById('currentTime').textContent = getCurrentTime();
             
-            // Примеры вопросов
-            exampleButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const question = this.dataset.example;
-                    userInput.value = question;
-                    userInput.focus();
-                });
-            });
-            
-            // Отправка сообщения
+            // Обработчики событий
+            testConnectionBtn.addEventListener('click', testConnection);
             sendButton.addEventListener('click', sendMessage);
-            userInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
+            userInput.addEventListener('keydown', handleKeyDown);
+            apiUrlInput.addEventListener('change', updateApiUrl);
+            modelSelect.addEventListener('change', updateModel);
+            
+            // Управление вводом
+            userInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
             });
             
-            function sendMessage() {
-                const message = userInput.value.trim();
-                if (!message) return;
+            function updateApiUrl() {
+                currentApiUrl = apiUrlInput.value.trim();
+                if (!currentApiUrl) {
+                    currentApiUrl = 'http://localhost:11434';
+                    apiUrlInput.value = currentApiUrl;
+                }
+                isConnected = false;
+                updateStatus();
+            }
+            
+            function updateModel() {
+                currentModel = modelSelect.value;
+                modelName.textContent = currentModel;
+                if (isConnected) {
+                    // Подтверждаем изменение модели
+                    addSystemMessage(`Модель изменена на ${currentModel}. Отправьте сообщение для обновления контекста.`);
+                }
+            }
+            
+            async function testConnection() {
+                testConnectionBtn.disabled = true;
+                testConnectionBtn.textContent = 'Проверяю...';
                 
+                try {
+                    // Пробуем получить список моделей
+                    const response = await fetch(`${currentApiUrl}/api/tags`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Ошибка HTTP: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.models && data.models.length > 0) {
+                        isConnected = true;
+                        addSystemMessage('✅ Подключение к Ollama успешно! Доступные модели: ' + 
+                            data.models.map(m => m.name).join(', '));
+                        
+                        // Проверяем, доступна ли выбранная модель
+                        const availableModels = data.models.map(m => m.name);
+                        if (!availableModels.includes(currentModel)) {
+                            addSystemMessage(`⚠️ Модель ${currentModel} не найдена. Попробуйте запустить её командой: ollama run ${currentModel}`);
+                        }
+                    } else {
+                        throw new Error('Нет доступных моделей. Установите модель командой: ollama run llama3.2');
+                    }
+                    
+                } catch (error) {
+                    isConnected = false;
+                    showError(`Ошибка подключения: ${error.message}. Убедитесь, что:<br>
+                    1. Ollama установлен и запущен<br>
+                    2. API доступен по адресу ${currentApiUrl}<br>
+                    3. Установлена хотя бы одна модель (ollama run llama3.2)`);
+                }
+                
+                testConnectionBtn.disabled = false;
+                testConnectionBtn.textContent = 'Проверить подключение';
+                updateStatus();
+            }
+            
+            function updateStatus() {
+                if (isConnected) {
+                    statusDot.className = 'status-dot connected';
+                    statusText.textContent = 'Подключено к Ollama';
+                    userInput.disabled = false;
+                    sendButton.disabled = false;
+                    userInput.placeholder = 'Задайте любой вопрос...';
+                } else {
+                    statusDot.className = 'status-dot disconnected';
+                    statusText.textContent = 'Не подключено к Ollama';
+                    userInput.disabled = true;
+                    sendButton.disabled = true;
+                    userInput.placeholder = 'Сначала подключитесь к Ollama...';
+                }
+            }
+            
+            function showError(message) {
+                errorMessage.innerHTML = message;
+                errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 10000);
+            }
+            
+            function addSystemMessage(text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'system-message';
+                messageDiv.innerHTML = text;
+                
+                const chatContainer = document.getElementById('chatContainer');
+                const existingSystem = chatContainer.querySelector('.system-message');
+                if (existingSystem) {
+                    chatContainer.insertBefore(messageDiv, existingSystem.nextSibling);
+                } else {
+                    chatContainer.appendChild(messageDiv);
+                }
+                
+                scrollToBottom();
+            }
+            
+            async function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message || !isConnected) return;
+                
+                // Добавляем сообщение пользователя
                 addUserMessage(message);
+                
+                // Сохраняем в историю
+                conversationHistory.push({
+                    role: 'user',
+                    content: message,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Очищаем поле ввода
                 userInput.value = '';
                 userInput.style.height = '56px';
                 
+                // Показываем индикатор набора
                 typingIndicator.style.display = 'block';
                 
-                setTimeout(() => {
+                try {
+                    // Готовим сообщения для API
+                    const messages = conversationHistory.map(msg => ({
+                        role: msg.role,
+                        content: msg.content
+                    }));
+                    
+                    // Добавляем системный промпт для лучших ответов
+                    messages.unshift({
+                        role: 'system',
+                        content: `Ты полезный AI ассистент. Отвечай подробно, информативно и по существу. 
+                        Используй markdown форматирование: **жирный** для важного, \`код\` для команд и примеров.
+                        Если вопрос требует пошагового решения - давай четкие шаги.
+                        Будь точным в фактах, но если не уверен - честно скажи об этом.`
+                    });
+                    
+                    // Отправляем запрос к Ollama API
+                    const response = await fetch(`${currentApiUrl}/api/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: currentModel,
+                            messages: messages,
+                            stream: false,
+                            options: {
+                                temperature: 0.7,
+                                top_p: 0.9,
+                                top_k: 40,
+                                repeat_penalty: 1.1,
+                                num_predict: 2048
+                            }
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Ошибка API: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Скрываем индикатор набора
                     typingIndicator.style.display = 'none';
-                    const aiResponse = generateAIResponse(message);
+                    
+                    // Добавляем ответ ИИ
+                    const aiResponse = data.message.content;
                     addAIMessage(aiResponse);
-                }, 800 + Math.random() * 800);
+                    
+                    // Сохраняем ответ в историю
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: aiResponse,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Ограничиваем историю (последние 20 сообщений)
+                    if (conversationHistory.length > 20) {
+                        conversationHistory = conversationHistory.slice(-20);
+                    }
+                    
+                } catch (error) {
+                    typingIndicator.style.display = 'none';
+                    showError(`Ошибка при получении ответа: ${error.message}`);
+                    addAIMessage('Извините, произошла ошибка при обработке запроса. Пожалуйста, проверьте подключение к Ollama и попробуйте снова.');
+                }
             }
             
             function addUserMessage(text) {
@@ -728,7 +736,7 @@
                         <div class="message-sender">Вы</div>
                         <div class="message-time">${time}</div>
                     </div>
-                    ${escapeHtml(text)}
+                    <div class="message-content">${escapeHtml(text)}</div>
                 `;
                 
                 chatContainer.appendChild(messageDiv);
@@ -740,62 +748,97 @@
                 messageDiv.className = 'message ai-message';
                 
                 const time = getCurrentTime();
-                const thinking = getThinkingProcess(text);
+                const formattedContent = formatMessageContent(text);
                 
                 messageDiv.innerHTML = `
                     <div class="message-header">
-                        <div class="message-sender">Умный ИИ</div>
+                        <div class="message-sender">ИИ (${currentModel})</div>
                         <div class="message-time">${time}</div>
                     </div>
-                    ${text}
-                    ${thinking}
+                    <div class="message-content">${formattedContent}</div>
                 `;
                 
                 chatContainer.appendChild(messageDiv);
                 scrollToBottom();
             }
             
-            function generateAIResponse(message) {
-                const lowerMsg = message.toLowerCase();
+            function formatMessageContent(text) {
+                // Форматирование Markdown
+                let formatted = escapeHtml(text);
                 
-                // Поиск в базе знаний
-                for (const [category, topics] of Object.entries(knowledgeBase)) {
-                    for (const [topic, answer] of Object.entries(topics)) {
-                        if (lowerMsg.includes(topic)) {
-                            return answer;
-                        }
-                    }
-                }
+                // Жирный текст
+                formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 
-                // Поиск в общих ответах
-                for (const [topic, answer] of Object.entries(generalResponses)) {
-                    if (lowerMsg.includes(topic)) {
-                        return answer;
-                    }
-                }
+                // Курсив
+                formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
                 
-                // Генерация осмысленного ответа
-                return generateMeaningfulResponse(message);
+                // Код inline
+                formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+                
+                // Блоки кода
+                formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
+                    return `<div class="code-block">${escapeHtml(code.trim())}</div>`;
+                });
+                
+                // Списки
+                formatted = formatted.replace(/^\- (.*?)$/gm, '• $1');
+                formatted = formatted.replace(/^\d+\. (.*?)$/gm, '$&');
+                
+                // Заголовки
+                formatted = formatted.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+                formatted = formatted.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+                formatted = formatted.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+                
+                // Ссылки (базовые)
+                formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+                
+                // Переносы строк
+                formatted = formatted.replace(/\n\n/g, '<br><br>');
+                
+                return formatted;
             }
             
-            function generateMeaningfulResponse(message) {
-                const lowerMsg = message.toLowerCase();
-                
-                // Определение типа вопроса
-                if (lowerMsg.includes('почему') || lowerMsg.includes('зачем')) {
-                    return generateCausalResponse(message);
-                } else if (lowerMsg.includes('как') || lowerMsg.includes('способ') || lowerMsg.includes('метод')) {
-                    return generateMethodResponse(message);
-                } else if (lowerMsg.includes('что такое') || lowerMsg.includes('что значит')) {
-                    return generateDefinitionResponse(message);
-                } else if (lowerMsg.includes('лучше') || lowerMsg.includes('хуже') || lowerMsg.includes('сравни')) {
-                    return generateComparisonResponse(message);
-                } else if (lowerMsg.includes('совет') || lowerMsg.includes('рекомендация')) {
-                    return generateAdviceResponse(message);
+            function handleKeyDown(e) {
+                if (e.key === 'Enter' && !e.shiftKey && isConnected) {
+                    e.preventDefault();
+                    sendMessage();
                 }
-                
-                // Общий осмысленный ответ
-                const responses = [
-                    `<strong>Конкретный ответ:</strong><br><br>Давайте разберём по пунктам:<br><br>1. <strong>Основная идея:</strong> Суть в том, что...<br>2. <strong>Ключевые аспекты:</strong> Важно учитывать...<br>3. <strong>Практическое применение:</strong> На практике это значит...`,
-                    `<strong>Отвечаю конкретно:</strong><br><br>• <strong>Факт 1:</strong> ...<br>• <strong>Факт 2:</strong> ...<br>• <strong>Факт 3:</strong> ...<br><br><strong>Вывод:</strong> Исходя из этого...`,
-                    `<strong>Суть вопроса:</strong><br><br>Если говорить прямо, то...<br><br><strong>Подробнее:</strong><br>1. ...<br>2. ...<br>3. ...<br><br><strong>Что
+            }
+            
+            function getCurrentTime() {
+                const now = new Date();
+                return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            }
+            
+            function scrollToBottom() {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // Примеры сообщений для тестирования
+            window.addExampleMessage = function(type, text) {
+                if (type === 'user') {
+                    addUserMessage(text);
+                    conversationHistory.push({
+                        role: 'user',
+                        content: text,
+                        timestamp: new Date().toISOString()
+                    });
+                } else {
+                    addAIMessage(text);
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: text,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            };
+        });
+    </script>
+</body>
+</html>

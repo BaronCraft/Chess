@@ -1,0 +1,57 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Убираем scrollbars */
+    font-family: sans-serif;
+    background-color: #87CEEB; /* Небо голубое */
+}
+
+canvas {
+    display: block; /* Убирает отступы под canvas */
+}
+
+#blockInfo {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 100;
+}
+
+#currentBlock {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 4px;
+    background-color: white;
+    border-radius: 50%;
+    border: 2px solid black;
+    z-index: 99;
+    pointer-events: none;
+}
+
+#toggleModeBtn {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    padding: 10px;
+    z-index: 100;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#toggleModeBtn:hover {
+    background-color: #555;
+}

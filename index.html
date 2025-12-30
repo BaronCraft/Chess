@@ -3,1158 +3,815 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Продвинутый ИИ с ML API</title>
+    <title>Lichess Clone - Шахматная доска</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
-        }
-        
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
+            background-color: #1a1a1a;
+            color: #e0e0e0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-light);
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 95vh;
-            border: 1px solid var(--border);
         }
         
         header {
-            background: linear-gradient(90deg, var(--bg-dark), var(--bg-card));
-            padding: 24px 32px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        
-        .title-section h1 {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-        }
-        
-        .title-section p {
-            color: var(--text-muted);
-            font-size: 16px;
-        }
-        
-        .api-status {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            background: rgba(30, 41, 59, 0.6);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-        }
-        
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        
-        .status-dot.connected {
-            background: var(--success);
-            animation: pulse 2s infinite;
-        }
-        
-        .status-dot.disconnected {
-            background: var(--danger);
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .controls {
-            padding: 24px;
-            background: rgba(15, 23, 42, 0.6);
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .model-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
+            text-align: center;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #444;
         }
         
-        .model-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
+        h1 {
+            color: #f0b040;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
         }
         
-        .model-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
+        .subtitle {
+            color: #aaa;
+            font-size: 1.1rem;
         }
         
-        .model-card.active {
-            border-color: var(--primary);
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent);
-        }
-        
-        .model-icon {
-            font-size: 28px;
-            margin-bottom: 12px;
-        }
-        
-        .model-name {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-light);
-        }
-        
-        .model-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-        
-        .chat-wrapper {
-            flex: 1;
+        .container {
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+        }
+        
+        .board-container {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
             overflow: hidden;
         }
         
-        .sidebar {
-            width: 300px;
-            background: rgba(15, 23, 42, 0.6);
-            border-right: 1px solid var(--border);
-            padding: 24px;
-            overflow-y: auto;
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: min(80vw, 600px);
+            height: min(80vw, 600px);
+            border: 2px solid #555;
         }
         
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+        
+        .light {
+            background-color: #f0d9b5;
+        }
+        
+        .dark {
+            background-color: #b58863;
+        }
+        
+        .selected {
+            background-color: rgba(255, 255, 100, 0.7) !important;
+        }
+        
+        .possible-move {
+            position: relative;
+        }
+        
+        .possible-move::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+        }
+        
+        .possible-capture {
+            position: relative;
+        }
+        
+        .possible-capture::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid rgba(255, 0, 0, 0.4);
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        
+        .coordinates {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.7);
+            user-select: none;
+        }
+        
+        .rank-coordinates {
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .file-coordinates {
+            bottom: 5px;
+            right: 50%;
+            transform: translateX(50%);
+        }
+        
+        .panel {
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 280px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .panel h2 {
+            color: #f0b040;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .game-info {
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            background-color: #3a3a3a;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .turn-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .turn-indicator .fa-chess {
+            font-size: 1.5rem;
+        }
+        
+        .white-turn {
+            color: #f0f0f0;
+        }
+        
+        .black-turn {
+            color: #333;
+        }
+        
+        .active-turn {
+            transform: scale(1.2);
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.7);
+        }
+        
+        .controls {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            background: rgba(15, 23, 42, 0.3);
+            gap: 10px;
         }
         
-        .message {
-            max-width: 85%;
-            padding: 20px;
-            border-radius: 20px;
-            line-height: 1.6;
-            position: relative;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .user-message {
-            align-self: flex-end;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border-bottom-right-radius: 5px;
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
-        }
-        
-        .ai-message {
-            align-self: flex-start;
-            background: rgba(30, 41, 59, 0.8);
-            color: var(--text-light);
-            border: 1px solid var(--border);
-            border-bottom-left-radius: 5px;
-        }
-        
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-        
-        .message-sender {
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-        
-        .user-message .message-sender {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .message-time {
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-        
-        .typing-indicator {
-            display: none;
-            align-self: flex-start;
-            background: rgba(30, 41, 59, 0.8);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 10px;
-            border: 1px solid var(--border);
-        }
-        
-        .typing-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .typing-dots {
-            display: flex;
-            gap: 6px;
-        }
-        
-        .typing-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--primary);
-            animation: typing 1.4s infinite ease-in-out;
-        }
-        
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
-            40% { transform: scale(1.2); opacity: 1; }
-        }
-        
-        .input-container {
-            padding: 24px;
-            border-top: 1px solid var(--border);
-            background: rgba(15, 23, 42, 0.6);
-        }
-        
-        .input-wrapper {
-            display: flex;
-            gap: 16px;
-            align-items: flex-end;
-        }
-        
-        .message-input {
-            flex: 1;
-            padding: 16px 24px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            color: var(--text-light);
-            font-size: 16px;
-            transition: all 0.3s;
-            resize: none;
-            min-height: 60px;
-            line-height: 1.5;
-        }
-        
-        .message-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        
-        .message-input::placeholder {
-            color: var(--text-muted);
-        }
-        
-        .send-btn {
-            padding: 16px 32px;
-            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+        button {
+            padding: 12px 20px;
+            background-color: #4a4a4a;
             color: white;
             border: none;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s;
-            min-width: 120px;
-            height: 60px;
+            font-size: 1rem;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
         
-        .send-btn:hover:not(:disabled) {
+        button:hover {
+            background-color: #5a5a5a;
             transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(99, 102, 241, 0.3);
         }
         
-        .send-btn:disabled {
-            background: #475569;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        .reset-btn {
+            background-color: #d32f2f;
         }
         
-        .examples {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        .reset-btn:hover {
+            background-color: #f44336;
+        }
+        
+        .rules-list {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+        
+        .rules-list li {
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .instructions {
             margin-top: 20px;
+            padding: 15px;
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            max-width: 600px;
+            text-align: center;
         }
         
-        .example-btn {
-            padding: 10px 16px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-muted);
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
+        .piece {
+            cursor: grab;
+            transition: transform 0.1s;
         }
         
-        .example-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: translateY(-1px);
+        .piece:active {
+            cursor: grabbing;
+            transform: scale(1.1);
         }
         
-        .stats {
-            padding: 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-        
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fecaca;
-            padding: 16px;
-            border-radius: 16px;
-            margin: 0 24px 20px;
-            font-size: 14px;
-            display: none;
-        }
-        
-        .success-message {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #a7f3d0;
-            padding: 16px;
-            border-radius: 16px;
-            margin: 0 24px 20px;
-            font-size: 14px;
-            display: none;
-        }
-        
-        .code-block {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 16px;
-            border-radius: 12px;
-            margin: 12px 0;
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .ai-message strong {
-            color: var(--primary);
-        }
-        
-        .ai-message a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-        
-        .ai-message a:hover {
-            text-decoration: underline;
-        }
-        
-        .sidebar-section {
-            margin-bottom: 30px;
-        }
-        
-        .sidebar-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .conversation-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .conversation-item {
-            padding: 12px 16px;
-            background: rgba(30, 41, 59, 0.6);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .conversation-item:hover {
-            background: rgba(30, 41, 59, 0.8);
-            border-color: var(--primary);
-        }
-        
-        .conversation-title {
-            font-weight: 500;
-            margin-bottom: 4px;
-            color: var(--text-light);
-        }
-        
-        .conversation-preview {
-            font-size: 12px;
-            color: var(--text-muted);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .clear-btn {
-            width: 100%;
-            padding: 12px;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fecaca;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        
-        .clear-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-        }
-        
-        @media (max-width: 1024px) {
-            .chat-wrapper {
+        @media (max-width: 900px) {
+            .game-area {
                 flex-direction: column;
+                align-items: center;
             }
             
-            .sidebar {
+            .panel {
                 width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                max-height: 200px;
+                max-width: 600px;
             }
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                height: 100vh;
-                border-radius: 0;
-            }
-            
-            .header-content {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .message {
-                max-width: 95%;
-            }
-            
-            .input-wrapper {
-                flex-direction: column;
-            }
-            
-            .send-btn {
-                width: 100%;
-            }
-        }
-        
-        .model-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 8px;
-            background: var(--primary);
-            color: white;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .token-count {
-            display: inline-block;
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--primary);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .thinking-indicator {
-            font-size: 13px;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-top: 8px;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <header>
+        <h1><i class="fas fa-chess-knight"></i> Lichess Clone</h1>
+        <p class="subtitle">Интерактивная шахматная доска с подсветкой возможных ходов</p>
+    </header>
+    
     <div class="container">
-        <header>
-            <div class="header-content">
-                <div class="title-section">
-                    <h1>Продвинутый ИИ с ML API</h1>
-                    <p>Настоящий искусственный интеллект с использованием современных моделей</p>
-                </div>
-                <div class="api-status">
-                    <div class="status-dot disconnected" id="statusDot"></div>
-                    <span id="statusText">API не подключен</span>
-                </div>
+        <div class="game-area">
+            <div class="board-container">
+                <div class="board" id="board"></div>
             </div>
-        </header>
-        
-        <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage"></div>
-        
-        <div class="controls">
-            <div class="model-selector">
-                <div class="model-card active" data-model="gpt-3.5-turbo">
-                    <div class="model-icon">🤖</div>
-                    <div class="model-name">GPT-3.5 Turbo</div>
-                    <div class="model-desc">Быстрая и эффективная модель для общения и решения задач</div>
-                    <span class="model-badge">БЫСТРАЯ</span>
-                </div>
-                <div class="model-card" data-model="gpt-4">
-                    <div class="model-icon">🧠</div>
-                    <div class="model-name">GPT-4</div>
-                    <div class="model-desc">Продвинутая модель для сложных задач и глубокого анализа</div>
-                    <span class="model-badge">ПРОДВИНУТАЯ</span>
-                </div>
-                <div class="model-card" data-model="claude-2">
-                    <div class="model-icon">🌟</div>
-                    <div class="model-name">Claude 2</div>
-                    <div class="model-desc">Творческая модель для креативных задач и писательства</div>
-                    <span class="model-badge">КРЕАТИВНАЯ</span>
-                </div>
-                <div class="model-card" data-model="llama-2-70b">
-                    <div class="model-icon">🦙</div>
-                    <div class="model-name">Llama 2 70B</div>
-                    <div class="model-desc">Мощная open-source модель для кода и анализа</div>
-                    <span class="model-badge">OPEN SOURCE</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="chat-wrapper">
-            <div class="sidebar">
-                <div class="sidebar-section">
-                    <div class="sidebar-title">История бесед</div>
-                    <div class="conversation-list" id="conversationList">
-                        <div class="conversation-item">
-                            <div class="conversation-title">Текущая беседа</div>
-                            <div class="conversation-preview">Начните общение...</div>
+            
+            <div class="panel">
+                <h2><i class="fas fa-gamepad"></i> Управление</h2>
+                
+                <div class="game-info">
+                    <div class="status" id="status">Ход белых. Выберите фигуру</div>
+                    
+                    <div class="turn-indicator">
+                        <div class="white-turn" id="white-turn">
+                            <i class="fas fa-chess"></i> Белые
+                        </div>
+                        <span style="margin: 0 10px;">vs</span>
+                        <div class="black-turn" id="black-turn">
+                            <i class="fas fa-chess"></i> Черные
                         </div>
                     </div>
-                    <button class="clear-btn" id="clearHistory">
-                        <i class="fas fa-trash"></i> Очистить историю
+                </div>
+                
+                <div class="controls">
+                    <button id="resetBtn" class="reset-btn">
+                        <i class="fas fa-redo"></i> Новая игра
+                    </button>
+                    <button id="flipBoardBtn">
+                        <i class="fas fa-sync-alt"></i> Перевернуть доску
                     </button>
                 </div>
                 
-                <div class="sidebar-section">
-                    <div class="sidebar-title">Быстрые примеры</div>
-                    <div class="examples">
-                        <button class="example-btn" data-example="Объясни квантовую физику простыми словами">Квантовая физика</button>
-                        <button class="example-btn" data-example="Напиши код функции для сортировки массива на Python">Код сортировки</button>
-                        <button class="example-btn" data-example="Как работает блокчейн?">Блокчейн</button>
-                        <button class="example-btn" data-example="Напиши бизнес-план для стартапа">Бизнес-план</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="chat-container" id="chatContainer">
-                <div class="message ai-message">
-                    <div class="message-header">
-                        <div class="message-sender">ИИ Ассистент</div>
-                        <div class="message-time" id="currentTime"></div>
-                    </div>
-                    <div class="message-content">
-                        <strong>Привет! Я — продвинутый искусственный интеллект с использованием ML API.</strong><br><br>
-                        
-                        🔹 <strong>Доступные модели:</strong> GPT-3.5, GPT-4, Claude 2, Llama 2<br>
-                        🔹 <strong>Подключение:</strong> Используется ваш API ключ<br>
-                        🔹 <strong>Возможности:</strong> Код, анализ, творчество, обучение<br><br>
-                        
-                        Выберите модель выше и задавайте любые вопросы!
-                    </div>
-                </div>
+                <h2 style="margin-top: 25px;"><i class="fas fa-book"></i> Реализованные правила</h2>
+                <ul class="rules-list">
+                    <li>Ходы всех фигур согласно правилам шахмат</li>
+                    <li>Подсветка возможных ходов при выборе фигуры</li>
+                    <li>Чередование ходов белых и черных</li>
+                    <li>Взятие фигур противника</li>
+                    <li>Проверка на выход за пределы доски</li>
+                </ul>
             </div>
         </div>
         
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-content">
-                <div class="typing-dots">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-                <span id="typingModel">GPT-3.5 Turbo думает...</span>
-            </div>
-        </div>
-        
-        <div class="input-container">
-            <div class="input-wrapper">
-                <textarea class="message-input" id="userInput" 
-                          placeholder="Введите ваш вопрос или сообщение..." 
-                          autocomplete="off" disabled></textarea>
-                <button class="send-btn" id="sendButton" disabled>
-                    <i class="fas fa-paper-plane"></i> Отправить
-                </button>
-            </div>
-            
-            <div class="examples" style="margin-top: 16px;">
-                <button class="example-btn" data-example="Как улучшить производительность веб-сайта?">Веб-производительность</button>
-                <button class="example-btn" data-example="Объясни теорию относительности">Теория относительности</button>
-                <button class="example-btn" data-example="Напиши поэму о космосе">Поэма о космосе</button>
-                <button class="example-btn" data-example="Создай план тренировок на неделю">План тренировок</button>
-            </div>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-item">
-                <i class="fas fa-brain"></i>
-                <span>Модель: <span id="currentModelDisplay">GPT-3.5 Turbo</span></span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-database"></i>
-                <span>Использовано токенов: <span id="tokenCount">0</span></span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-comments"></i>
-                <span>Сообщений: <span id="messageCount">1</span></span>
-            </div>
+        <div class="instructions">
+            <p><strong>Инструкция:</strong> Кликните на фигуру, чтобы увидеть возможные ходы. Затем кликните на одну из подсвеченных клеток, чтобы сделать ход.</p>
+            <p style="margin-top: 8px;">Текущий игрок: <span id="current-player">Белые</span></p>
         </div>
     </div>
+    
+    <footer>
+        <p>Lichess Clone &copy; 2023 | Вдохновлено lichess.org | Реализованы базовые правила шахмат</p>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Конфигурация
-            const API_KEY = 'f1f9f85792af41cdba40102ee8975cf8';
-            const API_BASE_URL = 'https://api.openai.com/v1'; // Измените на ваш API endpoint
-            
-            // Элементы DOM
-            const chatContainer = document.getElementById('chatContainer');
-            const userInput = document.getElementById('userInput');
-            const sendButton = document.getElementById('sendButton');
-            const typingIndicator = document.getElementById('typingIndicator');
-            const typingModel = document.getElementById('typingModel');
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-            const errorMessage = document.getElementById('errorMessage');
-            const successMessage = document.getElementById('successMessage');
-            const currentModelDisplay = document.getElementById('currentModelDisplay');
-            const tokenCount = document.getElementById('tokenCount');
-            const messageCount = document.getElementById('messageCount');
-            const clearHistoryBtn = document.getElementById('clearHistory');
-            
-            // Состояние приложения
-            let isConnected = false;
-            let currentModel = 'gpt-3.5-turbo';
-            let conversationHistory = [];
-            let totalTokens = 0;
-            let conversations = [];
-            
-            // Инициализация
-            init();
-            
-            async function init() {
-                // Загрузка сохранённых данных
-                loadFromLocalStorage();
-                
-                // Установка времени
-                document.getElementById('currentTime').textContent = getCurrentTime();
-                
-                // Проверка API подключения
-                await testAPIConnection();
-                
-                // Настройка обработчиков событий
-                setupEventListeners();
-                
-                // Обновление UI
-                updateUI();
-            }
-            
-            function setupEventListeners() {
-                // Выбор модели
-                document.querySelectorAll('.model-card').forEach(card => {
-                    card.addEventListener('click', function() {
-                        document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
-                        this.classList.add('active');
-                        currentModel = this.dataset.model;
-                        currentModelDisplay.textContent = this.querySelector('.model-name').textContent;
-                        
-                        showSuccess(`Модель изменена на ${currentModel}`);
-                    });
-                });
-                
-                // Отправка сообщения
-                sendButton.addEventListener('click', sendMessage);
-                userInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey && isConnected) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-                
-                // Автоматическое изменение высоты textarea
-                userInput.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-                });
-                
-                // Примеры вопросов
-                document.querySelectorAll('.example-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        if (!isConnected) {
-                            showError('Сначала подключитесь к API');
-                            return;
-                        }
-                        userInput.value = this.dataset.example;
-                        userInput.focus();
-                        userInput.style.height = 'auto';
-                        userInput.style.height = Math.min(userInput.scrollHeight, 150) + 'px';
-                    });
-                });
-                
-                // Очистка истории
-                clearHistoryBtn.addEventListener('click', function() {
-                    if (confirm('Очистить всю историю бесед? Это действие нельзя отменить.')) {
-                        conversationHistory = [];
-                        conversations = [];
-                        totalTokens = 0;
-                        saveToLocalStorage();
-                        updateUI();
-                        showSuccess('История очищена');
-                        
-                        // Очищаем чат
-                        chatContainer.innerHTML = `
-                            <div class="message ai-message">
-                                <div class="message-header">
-                                    <div class="message-sender">ИИ Ассистент</div>
-                                    <div class="message-time">${getCurrentTime()}</div>
-                                </div>
-                                <div class="message-content">
-                                    История беседы очищена. Начните новый диалог!
-                                </div>
-                            </div>
-                        `;
-                    }
-                });
-            }
-            
-            async function testAPIConnection() {
-                try {
-                    showStatus('Проверка подключения...', 'warning');
-                    
-                    // Тестовый запрос к API
-                    const response = await fetch(`${API_BASE_URL}/models`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${API_KEY}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        isConnected = true;
-                        showStatus('API подключен', 'success');
-                        showSuccess('Подключение к API успешно установлено!');
-                        updateUI();
-                    } else {
-                        throw new Error(`API ошибка: ${response.status}`);
-                    }
-                } catch (error) {
-                    isConnected = false;
-                    showStatus('API не подключен', 'error');
-                    showError(`Не удалось подключиться к API: ${error.message}. Проверьте ключ и подключение к интернету.`);
-                    updateUI();
-                }
-            }
-            
-            async function sendMessage(// В теле запроса к API (внутри функции sendMessage):
-body: JSON.stringify({
-    model: currentModel,
-    messages: messages,
-    temperature: 0.7,
-    max_tokens: 2000,
-    top_p: 0.9
-})) {
-                const message = userInput.value.trim();
-                if (!message || !isConnected) return;
-                
-                // Добавляем сообщение пользователя
-                addMessageToChat('user', message);
-                
-                // Добавляем в историю
-                conversationHistory.push({
-                    role: 'user',
-                    content: message,
-                    timestamp: new Date().toISOString()
-                });
-                
-                // Очищаем поле ввода
-                userInput.value = '';
-                userInput.style.height = '60px';
-                
-                // Показываем индикатор набора
-                typingModel.textContent = `${currentModelDisplay.textContent} думает...`;
-                typingIndicator.style.display = 'block';
-                
-                try {
-                    // Подготавливаем сообщения для API
-                    const messages = [
-                        {
-                            role: 'system',
-                            content: `Ты полезный AI ассистент. Отвечай подробно, информативно и по существу. 
-                            Используй markdown форматирование: **жирный текст**, \`код\`, списки.
-                            Если вопрос сложный - разбивай ответ на логические части.
-                            Будь точным в фактах. Отвечай на русском языке, если пользователь пишет на русском.`
-                        },
-                        ...conversationHistory.slice(-10).map(msg => ({
-                            role: msg.role,
-                            content: msg.content
-                        }))
-                    ];
-                    
-                    // Отправляем запрос к API
-                    const response = await fetch(`${API_BASE_URL}/chat/completions`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${API_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            model: currentModel,
-                            messages: messages,
-                            temperature: 0.7,
-                            max_tokens: 2000,
-                            top_p: 0.9
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error?.message || `API ошибка: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    // Скрываем индикатор набора
-                    typingIndicator.style.display = 'none';
-                    
-                    // Получаем ответ
-                    const aiResponse = data.choices[0].message.content;
-                    const tokensUsed = data.usage.total_tokens;
-                    
-                    // Добавляем ответ ИИ
-                    addMessageToChat('assistant', aiResponse);
-                    
-                    // Обновляем статистику
-                    totalTokens += tokensUsed;
-                    tokenCount.textContent = totalTokens.toLocaleString();
-                    
-                    // Сохраняем в историю
-                    conversationHistory.push({
-                        role: 'assistant',
-                        content: aiResponse,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Обновляем список бесед
-                    updateConversationList(message);
-                    
-                    // Сохраняем данные
-                    saveToLocalStorage();
-                    
-                } catch (error) {
-                    typingIndicator.style.display = 'none';
-                    showError(`Ошибка: ${error.message}`);
-                    addMessageToChat('assistant', 'Извините, произошла ошибка при обработке вашего запроса. Пожалуйста, попробуйте еще раз.');
-                }
-            }
-            
-            function addMessageToChat(role, content) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${role === 'user' ? 'user-message' : 'ai-message'}`;
-                
-                const time = getCurrentTime();
-                const sender = role === 'user' ? 'Вы' : 'ИИ Ассистент';
-                
-                messageDiv.innerHTML = `
-                    <div class="message-header">
-                        <div class="message-sender">${sender}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                    <div class="message-content">${formatMessageContent(content)}</div>
-                `;
-                
-                chatContainer.appendChild(messageDiv);
-                scrollToBottom();
-                
-                // Обновляем счетчик сообщений
-                const currentCount = parseInt(messageCount.textContent);
-                messageCount.textContent = currentCount + 1;
-            }
-            
-            function formatMessageContent(text) {
-                // Базовая обработка Markdown
-                let formatted = escapeHtml(text);
-                
-                // Жирный текст
-                formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                
-                // Курсив
-                formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-                
-                // Inline код
-                formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
-                
-                // Блоки кода
-                formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
-                    return `<div class="code-block">${escapeHtml(code.trim())}</div>`;
-                });
-                
-                // Списки
-                formatted = formatted.replace(/^\- (.*?)$/gm, '• $1');
-                formatted = formatted.replace(/^\d+\. (.*?)$/gm, '$&');
-                
-                // Ссылки
-                formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-                
-                // Переносы строк
-                formatted = formatted.replace(/\n\n/g, '<br><br>');
-                
-                return formatted;
-            }
-            
-            function updateConversationList(lastMessage) {
-                // Создаем или обновляем текущую беседу
-                if (conversations.length === 0 || conversations[0].title === 'Текущая беседа') {
-                    const title = lastMessage.length > 30 ? lastMessage.substring(0, 30) + '...' : lastMessage;
-                    conversations[0] = {
-                        id: Date.now(),
-                        title: title,
-                        preview: lastMessage,
-                        timestamp: new Date().toISOString(),
-                        history: [...conversationHistory]
-                    };
-                } else {
-                    conversations[0].preview = lastMessage;
-                    conversations[0].timestamp = new Date().toISOString();
-                    conversations[0].history = [...conversationHistory];
-                }
-                
-                // Обновляем UI списка бесед
-                updateConversationUI();
-            }
-            
-            function updateConversationUI() {
-                const listContainer = document.getElementById('conversationList');
-                listContainer.innerHTML = '';
-                
-                conversations.forEach(conv => {
-                    const item = document.createElement('div');
-                    item.className = 'conversation-item';
-                    item.innerHTML = `
-                        <div class="conversation-title">${conv.title}</div>
-                        <div class="conversation-preview">${conv.preview}</div>
-                    `;
-                    
-                    item.addEventListener('click', () => {
-                        loadConversation(conv);
-                    });
-                    
-                    listContainer.appendChild(item);
-                });
-            }
-            
-            function loadConversation(conversation) {
-                // Очищаем текущий чат
-                chatContainer.innerHTML = '';
-                conversationHistory = [...conversation.history];
-                
-                // Восстанавливаем сообщения
-                conversation.history.forEach(msg => {
-                    addMessageToChat(msg.role, msg.content);
-                });
-                
-                // Обновляем статистику
-                messageCount.textContent = conversation.history.length;
-                
-                showSuccess(`Загружена беседа: ${conversation.title}`);
-            }
-            
-            function updateUI() {
-                if (isConnected) {
-                    userInput.disabled = false;
-                    sendButton.disabled = false;
-                    userInput.placeholder = 'Введите ваш вопрос или сообщение...';
-                } else {
-                    userInput.disabled = true;
-                    sendButton.disabled = true;
-                    userInput.placeholder = 'Подключитесь к API для начала общения...';
-                }
-                
-                updateConversationUI();
-            }
-            
-            function showStatus(text, type) {
-                statusText.textContent = text;
-                statusDot.className = `status-dot ${type}`;
-            }
-            
-            function showError(message) {
-                errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-                errorMessage.style.display = 'block';
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 8000);
-            }
-            
-            function showSuccess(message) {
-                successMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-                successMessage.style.display = 'block';
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 5000);
-            }
-            
-            function getCurrentTime() {
-                const now = new Date();
-                return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            }
-            
-            function scrollToBottom() {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-            
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-            
-            function saveToLocalStorage() {
-                const data = {
-                    conversations: conversations,
-                    totalTokens: totalTokens,
-                    currentModel: currentModel
-                };
-                localStorage.setItem('aiChatData', JSON.stringify(data));
-            }
-            
-            function loadFromLocalStorage() {
-                const saved = localStorage.getItem('aiChatData');
-                if (saved) {
-                    try {
-                        const data = JSON.parse(saved);
-                        conversations = data.conversations || [];
-                        totalTokens = data.totalTokens || 0;
-                        currentModel = data.currentModel || 'gpt-3.5-turbo';
-                        
-                        // Обновляем отображение
-                        tokenCount.textContent = totalTokens.toLocaleString();
-                        currentModelDisplay.textContent = getModelDisplayName(currentModel);
-                        
-                        // Активируем выбранную модель
-                        document.querySelectorAll('.model-card').forEach(card => {
-                            if (card.dataset.model === currentModel) {
-                                card.classList.add('active');
-                            } else {
-                                card.classList.remove('active');
-                            }
-                        });
-                        
-                    } catch (e) {
-                        console.error('Ошибка загрузки данных:', e);
-                    }
-                }
-            }
-            
-            function getModelDisplayName(modelKey) {
-                const models = {
-                    'gpt-3.5-turbo': 'GPT-3.5 Turbo',
-                    'gpt-4': 'GPT-4',
-                    'claude-2': 'Claude 2',
-                    'llama-2-70b': 'Llama 2 70B'
-                };
-                return models[modelKey] || modelKey;
-            }
+            // Инициализация игры
+            const game = new ChessGame();
+            game.init();
         });
+
+        class ChessGame {
+            constructor() {
+                this.board = [];
+                this.selectedPiece = null;
+                this.currentPlayer = 'white';
+                this.gameOver = false;
+                this.boardFlipped = false;
+                this.possibleMoves = [];
+                this.pieces = {
+                    'white': {
+                        'king': '♔',
+                        'queen': '♕',
+                        'rook': '♖',
+                        'bishop': '♗',
+                        'knight': '♘',
+                        'pawn': '♙'
+                    },
+                    'black': {
+                        'king': '♚',
+                        'queen': '♛',
+                        'rook': '♜',
+                        'bishop': '♝',
+                        'knight': '♞',
+                        'pawn': '♟'
+                    }
+                };
+            }
+
+            init() {
+                this.createBoard();
+                this.setupEventListeners();
+                this.updateStatus();
+                this.updateTurnIndicator();
+            }
+
+            createBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+                
+                // Начальная расстановка фигур
+                const initialBoard = [
+                    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+                    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''],
+                    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+                    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+                ];
+                
+                // Преобразуем буквенные обозначения в символы Unicode
+                const pieceMap = {
+                    'r': this.pieces.black.rook,
+                    'n': this.pieces.black.knight,
+                    'b': this.pieces.black.bishop,
+                    'q': this.pieces.black.queen,
+                    'k': this.pieces.black.king,
+                    'p': this.pieces.black.pawn,
+                    'R': this.pieces.white.rook,
+                    'N': this.pieces.white.knight,
+                    'B': this.pieces.white.bishop,
+                    'Q': this.pieces.white.queen,
+                    'K': this.pieces.white.king,
+                    'P': this.pieces.white.pawn
+                };
+                
+                // Создаем доску 8x8
+                for (let row = 0; row < 8; row++) {
+                    this.board[row] = [];
+                    for (let col = 0; col < 8; col++) {
+                        const square = document.createElement('div');
+                        square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                        square.dataset.row = row;
+                        square.dataset.col = col;
+                        
+                        // Добавляем координаты
+                        if (col === 0) {
+                            const rank = document.createElement('div');
+                            rank.className = 'coordinates rank-coordinates';
+                            rank.textContent = 8 - row;
+                            square.appendChild(rank);
+                        }
+                        
+                        if (row === 7) {
+                            const file = document.createElement('div');
+                            file.className = 'coordinates file-coordinates';
+                            file.textContent = String.fromCharCode(97 + col);
+                            square.appendChild(file);
+                        }
+                        
+                        // Добавляем фигуру, если есть
+                        const pieceChar = initialBoard[row][col];
+                        if (pieceChar) {
+                            const piece = document.createElement('div');
+                            piece.className = 'piece';
+                            piece.textContent = pieceMap[pieceChar];
+                            piece.dataset.piece = pieceChar;
+                            piece.dataset.color = pieceChar === pieceChar.toLowerCase() ? 'black' : 'white';
+                            square.appendChild(piece);
+                            
+                            // Сохраняем информацию о фигуре в массиве board
+                            this.board[row][col] = {
+                                type: pieceChar.toLowerCase(),
+                                color: pieceChar === pieceChar.toLowerCase() ? 'black' : 'white',
+                                element: piece
+                            };
+                        } else {
+                            this.board[row][col] = null;
+                        }
+                        
+                        boardElement.appendChild(square);
+                    }
+                }
+            }
+
+            setupEventListeners() {
+                const boardElement = document.getElementById('board');
+                boardElement.addEventListener('click', (e) => this.handleSquareClick(e));
+                
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
+                document.getElementById('flipBoardBtn').addEventListener('click', () => this.flipBoard());
+            }
+
+            handleSquareClick(e) {
+                if (this.gameOver) return;
+                
+                const square = e.target.closest('.square');
+                if (!square) return;
+                
+                const row = parseInt(square.dataset.row);
+                const col = parseInt(square.dataset.col);
+                
+                // Если фигура уже выбрана, пытаемся сделать ход
+                if (this.selectedPiece) {
+                    // Проверяем, является ли клик по возможному ходу
+                    const isPossibleMove = this.possibleMoves.some(move => 
+                        move.row === row && move.col === col
+                    );
+                    
+                    if (isPossibleMove) {
+                        this.makeMove(row, col);
+                    } else {
+                        // Если кликнули не на возможный ход, снимаем выделение
+                        this.clearSelection();
+                        // Если кликнули на другую фигуру текущего игрока, выбираем ее
+                        const piece = this.board[row][col];
+                        if (piece && piece.color === this.currentPlayer) {
+                            this.selectPiece(row, col);
+                        }
+                    }
+                } else {
+                    // Если фигура не выбрана, выбираем фигуру текущего игрока
+                    const piece = this.board[row][col];
+                    if (piece && piece.color === this.currentPlayer) {
+                        this.selectPiece(row, col);
+                    }
+                }
+            }
+
+            selectPiece(row, col) {
+                // Снимаем предыдущее выделение
+                this.clearSelection();
+                
+                // Выделяем выбранную фигуру
+                this.selectedPiece = { row, col };
+                const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+                square.classList.add('selected');
+                
+                // Получаем возможные ходы для выбранной фигуры
+                this.possibleMoves = this.getPossibleMoves(row, col);
+                
+                // Подсвечиваем возможные ходы
+                this.highlightPossibleMoves();
+            }
+
+            clearSelection() {
+                // Убираем выделение с ранее выбранной фигуры
+                if (this.selectedPiece) {
+                    const { row, col } = this.selectedPiece;
+                    const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+                    if (square) square.classList.remove('selected');
+                }
+                
+                // Убираем подсветку возможных ходов
+                document.querySelectorAll('.square').forEach(sq => {
+                    sq.classList.remove('possible-move', 'possible-capture');
+                });
+                
+                this.selectedPiece = null;
+                this.possibleMoves = [];
+            }
+
+            highlightPossibleMoves() {
+                this.possibleMoves.forEach(move => {
+                    const square = document.querySelector(`.square[data-row="${move.row}"][data-col="${move.col}"]`);
+                    if (square) {
+                        // Проверяем, есть ли на клетке фигура противника
+                        const targetPiece = this.board[move.row][move.col];
+                        if (targetPiece && targetPiece.color !== this.currentPlayer) {
+                            square.classList.add('possible-capture');
+                        } else {
+                            square.classList.add('possible-move');
+                        }
+                    }
+                });
+            }
+
+            getPossibleMoves(row, col) {
+                const piece = this.board[row][col];
+                if (!piece) return [];
+                
+                const moves = [];
+                
+                switch (piece.type) {
+                    case 'p': // Пешка
+                        this.getPawnMoves(row, col, piece.color, moves);
+                        break;
+                    case 'r': // Ладья
+                        this.getRookMoves(row, col, piece.color, moves);
+                        break;
+                    case 'n': // Конь
+                        this.getKnightMoves(row, col, piece.color, moves);
+                        break;
+                    case 'b': // Слон
+                        this.getBishopMoves(row, col, piece.color, moves);
+                        break;
+                    case 'q': // Ферзь
+                        this.getQueenMoves(row, col, piece.color, moves);
+                        break;
+                    case 'k': // Король
+                        this.getKingMoves(row, col, piece.color, moves);
+                        break;
+                }
+                
+                return moves;
+            }
+
+            getPawnMoves(row, col, color, moves) {
+                const direction = color === 'white' ? -1 : 1;
+                const startRow = color === 'white' ? 6 : 1;
+                
+                // Ход на одну клетку вперед
+                if (this.isValidSquare(row + direction, col) && !this.board[row + direction][col]) {
+                    moves.push({ row: row + direction, col });
+                    
+                    // Ход на две клетки вперед из начальной позиции
+                    if (row === startRow && !this.board[row + 2 * direction][col]) {
+                        moves.push({ row: row + 2 * direction, col });
+                    }
+                }
+                
+                // Взятие по диагонали
+                [-1, 1].forEach(dc => {
+                    const newRow = row + direction;
+                    const newCol = col + dc;
+                    if (this.isValidSquare(newRow, newCol)) {
+                        const targetPiece = this.board[newRow][newCol];
+                        if (targetPiece && targetPiece.color !== color) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+                });
+            }
+
+            getRookMoves(row, col, color, moves) {
+                const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                this.getSlidingMoves(row, col, color, directions, moves);
+            }
+
+            getBishopMoves(row, col, color, moves) {
+                const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                this.getSlidingMoves(row, col, color, directions, moves);
+            }
+
+            getQueenMoves(row, col, color, moves) {
+                const directions = [
+                    [-1, 0], [1, 0], [0, -1], [0, 1],
+                    [-1, -1], [-1, 1], [1, -1], [1, 1]
+                ];
+                this.getSlidingMoves(row, col, color, directions, moves);
+            }
+
+            getSlidingMoves(row, col, color, directions, moves) {
+                directions.forEach(([dr, dc]) => {
+                    let newRow = row + dr;
+                    let newCol = col + dc;
+                    
+                    while (this.isValidSquare(newRow, newCol)) {
+                        const targetPiece = this.board[newRow][newCol];
+                        
+                        if (!targetPiece) {
+                            // Пустая клетка - можно ходить
+                            moves.push({ row: newRow, col: newCol });
+                        } else if (targetPiece.color !== color) {
+                            // Фигура противника - можно брать, но дальше ходить нельзя
+                            moves.push({ row: newRow, col: newCol });
+                            break;
+                        } else {
+                            // Своя фигура - ходить нельзя
+                            break;
+                        }
+                        
+                        newRow += dr;
+                        newCol += dc;
+                    }
+                });
+            }
+
+            getKnightMoves(row, col, color, moves) {
+                const knightMoves = [
+                    [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                    [1, -2], [1, 2], [2, -1], [2, 1]
+                ];
+                
+                knightMoves.forEach(([dr, dc]) => {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    
+                    if (this.isValidSquare(newRow, newCol)) {
+                        const targetPiece = this.board[newRow][newCol];
+                        if (!targetPiece || targetPiece.color !== color) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+                });
+            }
+
+            getKingMoves(row, col, color, moves) {
+                const kingMoves = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1], [1, 0], [1, 1]
+                ];
+                
+                kingMoves.forEach(([dr, dc]) => {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    
+                    if (this.isValidSquare(newRow, newCol)) {
+                        const targetPiece = this.board[newRow][newCol];
+                        if (!targetPiece || targetPiece.color !== color) {
+                            moves.push({ row: newRow, col: newCol });
+                        }
+                    }
+                });
+            }
+
+            isValidSquare(row, col) {
+                return row >= 0 && row < 8 && col >= 0 && col < 8;
+            }
+
+            makeMove(toRow, toCol) {
+                if (!this.selectedPiece) return;
+                
+                const { row: fromRow, col: fromCol } = this.selectedPiece;
+                const piece = this.board[fromRow][fromCol];
+                
+                // Проверяем, является ли ход допустимым
+                const isValidMove = this.possibleMoves.some(move => 
+                    move.row === toRow && move.col === toCol
+                );
+                
+                if (!isValidMove) return;
+                
+                // Удаляем фигуру с целевой клетки (если есть)
+                const targetSquare = document.querySelector(`.square[data-row="${toRow}"][data-col="${toCol}"]`);
+                if (this.board[toRow][toCol]) {
+                    targetSquare.innerHTML = '';
+                }
+                
+                // Перемещаем фигуру
+                const fromSquare = document.querySelector(`.square[data-row="${fromRow}"][data-col="${fromCol}"]`);
+                const pieceElement = fromSquare.querySelector('.piece');
+                targetSquare.appendChild(pieceElement);
+                
+                // Обновляем состояние доски
+                this.board[toRow][toCol] = piece;
+                this.board[fromRow][fromCol] = null;
+                
+                // Проверяем, не взяли ли короля
+                if (piece.type === 'k') {
+                    this.gameOver = true;
+                    this.updateStatus(`Игра окончена! ${piece.color === 'white' ? 'Белые' : 'Черные'} выиграли!`);
+                }
+                
+                // Меняем игрока
+                this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+                
+                // Снимаем выделение
+                this.clearSelection();
+                
+                // Обновляем статус
+                this.updateStatus();
+                this.updateTurnIndicator();
+            }
+
+            updateStatus(message = null) {
+                const statusElement = document.getElementById('status');
+                const currentPlayerElement = document.getElementById('current-player');
+                
+                if (message) {
+                    statusElement.textContent = message;
+                } else if (this.gameOver) {
+                    statusElement.textContent = 'Игра окончена!';
+                } else {
+                    statusElement.textContent = `Ход ${this.currentPlayer === 'white' ? 'белых' : 'черных'}. Выберите фигуру`;
+                    currentPlayerElement.textContent = this.currentPlayer === 'white' ? 'Белые' : 'Черные';
+                }
+            }
+
+            updateTurnIndicator() {
+                const whiteTurn = document.getElementById('white-turn');
+                const blackTurn = document.getElementById('black-turn');
+                
+                if (this.currentPlayer === 'white') {
+                    whiteTurn.classList.add('active-turn');
+                    blackTurn.classList.remove('active-turn');
+                } else {
+                    blackTurn.classList.add('active-turn');
+                    whiteTurn.classList.remove('active-turn');
+                }
+            }
+
+            resetGame() {
+                this.selectedPiece = null;
+                this.currentPlayer = 'white';
+                this.gameOver = false;
+                this.possibleMoves = [];
+                this.createBoard();
+                this.updateStatus();
+                this.updateTurnIndicator();
+            }
+
+            flipBoard() {
+                this.boardFlipped = !this.boardFlipped;
+                const boardElement = document.getElementById('board');
+                
+                // Переворачиваем доску, меняя порядок клеток
+                const squares = Array.from(boardElement.children);
+                
+                if (this.boardFlipped) {
+                    // Разворачиваем массив клеток
+                    squares.reverse();
+                } else {
+                    // Восстанавливаем исходный порядок
+                    squares.sort((a, b) => {
+                        const rowA = parseInt(a.dataset.row);
+                        const colA = parseInt(a.dataset.col);
+                        const rowB = parseInt(b.dataset.row);
+                        const colB = parseInt(b.dataset.col);
+                        
+                        if (rowA !== rowB) return rowA - rowB;
+                        return colA - colB;
+                    });
+                }
+                
+                // Очищаем и перезаполняем доску
+                boardElement.innerHTML = '';
+                squares.forEach(square => {
+                    boardElement.appendChild(square);
+                });
+            }
+        }
     </script>
 </body>
 </html>

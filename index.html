@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Шахматы с мощным анализом Stockfish</title>
+    <title>Шахматы с анализом Lichess API</title>
     <style>
         * {
             box-sizing: border-box;
@@ -213,7 +213,7 @@
             100% { opacity: 0.8; }
         }
         
-        /* Оценка - черно-белая шкала */
+        /* Оценка - простая черно-белая шкала */
         .evaluation-card {
             background: #1e2e38;
             border-radius: 12px;
@@ -230,7 +230,7 @@
         
         .eval-bar-container {
             height: 24px;
-            background: linear-gradient(to right, #ffffff, #000000);
+            background: #000000; /* черный фон */
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid #888;
@@ -241,10 +241,9 @@
         .eval-bar {
             height: 100%;
             width: 50%;
-            background: rgba(255,255,255,0.3);
-            backdrop-filter: invert(100%);
+            background: #ffffff; /* белая полоса */
             transition: width 0.3s ease;
-            border-right: 2px solid #000;
+            border-right: 1px solid #ccc;
         }
         
         .eval-value {
@@ -376,7 +375,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>♜ <span>Stockfish 16</span> глубокий анализ ♞</h1>
+    <h1>♜ <span>Lichess API</span> анализ позиции ♞</h1>
     
     <div class="main-panel">
         <div class="board-section">
@@ -388,7 +387,7 @@
                 <button class="btn" id="newGameBtn">♔ Новая</button>
                 <button class="btn" id="flipBoardBtn">🔄 Поворот</button>
                 <button class="btn" id="undoBtn">↩ Отмена</button>
-                <button class="btn primary" id="analyzeBtn">🔍 Анализ</button>
+                <button class="btn primary" id="analyzeBtn">🔍 Анализ Lichess</button>
             </div>
         </div>
         
@@ -404,7 +403,7 @@
             </div>
             
             <div class="evaluation-card">
-                <div class="eval-title">📊 Stockfish 16 оценка</div>
+                <div class="eval-title">📊 Оценка Lichess Cloud</div>
                 <div class="eval-bar-container">
                     <div class="eval-bar" id="evalBar" style="width: 50%"></div>
                 </div>
@@ -413,6 +412,7 @@
                     Глубина: —<br>
                     Лучший ход: —
                 </div>
+                <div style="margin-top: 8px; text-align: center; font-size: 0.8em; color: #a0b8c5;" id="apiStatus"></div>
             </div>
             
             <div class="fen-box" id="fenDisplay">rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</div>
@@ -432,224 +432,6 @@
 
 <script>
     (function() {
-        // УСИЛЕННЫЙ ДВИЖОК: эвристическая оценка + дебютная книга
-        class PowerfulEngine {
-            constructor() {
-                this.pieceValues = {
-                    'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900, 'k': 20000,
-                    'P': -100, 'N': -320, 'B': -330, 'R': -500, 'Q': -900, 'K': -20000
-                };
-                
-                // Таблицы позиционной оценки (пешки, кони и т.д.)
-                this.pawnTable = [
-                    [0,  0,  0,  0,  0,  0,  0,  0],
-                    [50, 50, 50, 50, 50, 50, 50, 50],
-                    [10, 10, 20, 30, 30, 20, 10, 10],
-                    [5,  5, 10, 25, 25, 10,  5,  5],
-                    [0,  0,  0, 20, 20,  0,  0,  0],
-                    [5, -5,-10,  0,  0,-10, -5,  5],
-                    [5, 10, 10,-20,-20, 10, 10,  5],
-                    [0,  0,  0,  0,  0,  0,  0,  0]
-                ];
-                
-                this.knightTable = [
-                    [-50,-40,-30,-30,-30,-30,-40,-50],
-                    [-40,-20,  0,  0,  0,  0,-20,-40],
-                    [-30,  0, 10, 15, 15, 10,  0,-30],
-                    [-30,  5, 15, 20, 20, 15,  5,-30],
-                    [-30,  0, 15, 20, 20, 15,  0,-30],
-                    [-30,  5, 10, 15, 15, 10,  5,-30],
-                    [-40,-20,  0,  5,  5,  0,-20,-40],
-                    [-50,-40,-30,-30,-30,-30,-40,-50]
-                ];
-                
-                this.openingBook = {
-                    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w': ['e2e4', 'd2d4', 'g1f3', 'c2c4'],
-                    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b': ['e7e5', 'c7c5', 'e7e6', 'c7c6'],
-                    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w': ['g1f3', 'f1c4', 'd2d4'],
-                    // можно добавить больше
-                };
-            }
-            
-            // Основная оценка позиции
-            evaluateBoard(board) {
-                let score = 0;
-                
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        const piece = board[r][c];
-                        if (!piece) continue;
-                        
-                        // Материальный счет
-                        score += this.pieceValues[piece] || 0;
-                        
-                        // Позиционная оценка
-                        const isWhite = piece === piece.toUpperCase();
-                        const type = piece.toLowerCase();
-                        const evalRow = isWhite ? r : 7 - r;
-                        
-                        if (type === 'p') {
-                            score += isWhite ? this.pawnTable[evalRow][c] : -this.pawnTable[evalRow][c];
-                        } else if (type === 'n') {
-                            score += isWhite ? this.knightTable[evalRow][c] : -this.knightTable[evalRow][c];
-                        } else if (type === 'b') {
-                            // Слоны лучше на диагоналях
-                            if ((r + c) % 2 === 0) score += isWhite ? 10 : -10;
-                        } else if (type === 'r') {
-                            // Ладьи лучше на открытых линиях
-                            let openFile = true;
-                            for (let rr = 0; rr < 8; rr++) {
-                                if (rr !== r && board[rr][c] && board[rr][c].toLowerCase() === 'p') {
-                                    openFile = false;
-                                    break;
-                                }
-                            }
-                            if (openFile) score += isWhite ? 20 : -20;
-                        }
-                    }
-                }
-                
-                // Центральный контроль
-                const centerControl = this.evaluateCenterControl(board);
-                score += centerControl;
-                
-                // Безопасность короля (упрощенно)
-                const kingSafety = this.evaluateKingSafety(board);
-                score += kingSafety;
-                
-                return score / 100; // в пешках
-            }
-            
-            evaluateCenterControl(board) {
-                let score = 0;
-                const centerSquares = [[3,3], [3,4], [4,3], [4,4]];
-                
-                for (let [r, c] of centerSquares) {
-                    for (let dr = -1; dr <= 1; dr++) {
-                        for (let dc = -1; dc <= 1; dc++) {
-                            const nr = r + dr, nc = c + dc;
-                            if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                                const piece = board[nr][nc];
-                                if (piece) {
-                                    const val = piece === piece.toUpperCase() ? 5 : -5;
-                                    score += val;
-                                }
-                            }
-                        }
-                    }
-                }
-                return score;
-            }
-            
-            evaluateKingSafety(board) {
-                // Поиск королей
-                let wkRow, wkCol, bkRow, bkCol;
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        if (board[r][c] === 'K') { wkRow = r; wkCol = c; }
-                        if (board[r][c] === 'k') { bkRow = r; bkCol = c; }
-                    }
-                }
-                
-                let score = 0;
-                // Пешечное прикрытие
-                if (wkRow !== undefined) {
-                    for (let c = Math.max(0, wkCol-1); c <= Math.min(7, wkCol+1); c++) {
-                        if (wkRow > 0 && board[wkRow-1][c] === 'P') score += 15;
-                    }
-                }
-                if (bkRow !== undefined) {
-                    for (let c = Math.max(0, bkCol-1); c <= Math.min(7, bkCol+1); c++) {
-                        if (bkRow < 7 && board[bkRow+1][c] === 'p') score -= 15;
-                    }
-                }
-                return score;
-            }
-            
-            // Поиск лучшего хода (простой альфа-бета на 3 полухода)
-            findBestMove(game, depth = 3) {
-                // Проверка дебютной книги
-                const fenWithoutCounters = game.getFENWithoutCounters();
-                if (game.moveHistory.length < 6 && this.openingBook[fenWithoutCounters]) {
-                    const moves = this.openingBook[fenWithoutCounters];
-                    const legalMoves = game.generateAllMoves();
-                    const bookMove = moves.find(m => {
-                        const from = { row: 8 - parseInt(m[1]), col: m.charCodeAt(0) - 97 };
-                        const to = { row: 8 - parseInt(m[3]), col: m.charCodeAt(2) - 97 };
-                        return legalMoves.some(mv => mv.row === to.row && mv.col === to.col);
-                    });
-                    if (bookMove) {
-                        return {
-                            from: { row: 8 - parseInt(bookMove[1]), col: bookMove.charCodeAt(0) - 97 },
-                            to: { row: 8 - parseInt(bookMove[3]), col: bookMove.charCodeAt(2) - 97 },
-                            promotion: bookMove.length > 4 ? bookMove[4] : null
-                        };
-                    }
-                }
-                
-                // Поиск альфа-бета
-                const legalMoves = game.generateAllMoves();
-                if (legalMoves.length === 0) return null;
-                
-                let bestMove = null;
-                let bestScore = game.currentPlayer === 'w' ? -Infinity : Infinity;
-                
-                for (let move of legalMoves) {
-                    // Симулируем ход
-                    const gameCopy = this.copyGame(game);
-                    const piece = gameCopy.board[move.from.row][move.from.col];
-                    
-                    // Определяем promotion если пешка
-                    let promotion = null;
-                    if (piece.toLowerCase() === 'p' && (move.to.row === 0 || move.to.row === 7)) {
-                        promotion = 'q'; // всегда ферзь для простоты
-                    }
-                    
-                    gameCopy.makeMove(move.from, move.to, promotion);
-                    
-                    // Рекурсивная оценка
-                    let score;
-                    if (depth <= 1) {
-                        score = this.evaluateBoard(gameCopy.board);
-                        if (gameCopy.currentPlayer === 'w') score = -score; // инвертируем
-                    } else {
-                        const nextMove = this.findBestMove(gameCopy, depth - 1);
-                        score = nextMove ? nextMove.score : this.evaluateBoard(gameCopy.board);
-                    }
-                    
-                    if (game.currentPlayer === 'w') {
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestMove = move;
-                        }
-                    } else {
-                        if (score < bestScore) {
-                            bestScore = score;
-                            bestMove = move;
-                        }
-                    }
-                }
-                
-                if (bestMove) {
-                    bestMove.score = bestScore;
-                }
-                return bestMove;
-            }
-            
-            copyGame(game) {
-                const newGame = new ChessGame();
-                newGame.board = game.board.map(row => [...row]);
-                newGame.currentPlayer = game.currentPlayer;
-                newGame.castling = JSON.parse(JSON.stringify(game.castling));
-                newGame.enPassantTarget = game.enPassantTarget ? { ...game.enPassantTarget } : null;
-                newGame.halfMoveClock = game.halfMoveClock;
-                newGame.fullMoveNumber = game.fullMoveNumber;
-                newGame.moveHistory = [...game.moveHistory];
-                newGame.kingPositions = JSON.parse(JSON.stringify(game.kingPositions));
-                return newGame;
-            }
-        }
-        
         // ---------- ПОЛНАЯ РЕАЛИЗАЦИЯ ПРАВИЛ ФИДЕ ----------
         const pieceSymbols = {
             'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
@@ -1033,7 +815,6 @@
                 
                 this.enPassantTarget = null;
                 
-                // Специальные ходы
                 if (pieceType === 'p') {
                     if (to.enPassant) {
                         this.board[from.row][to.col] = '';
@@ -1079,7 +860,6 @@
                     this.board[from.row][from.col] = '';
                 }
                 
-                // Обновление прав на рокировку
                 if (pieceType === 'r') {
                     if (isWhite) {
                         if (from.row === 7 && from.col === 0) this.castling.w.Q = false;
@@ -1139,7 +919,6 @@
                     }
                 }
                 
-                // Проверка на шах/мат
                 const gameCopy = new ChessGame();
                 gameCopy.board = this.board.map(row => [...row]);
                 gameCopy.currentPlayer = this.currentPlayer === 'w' ? 'b' : 'w';
@@ -1219,7 +998,6 @@
         class ChessUI {
             constructor() {
                 this.game = new ChessGame();
-                this.engine = new PowerfulEngine();
                 this.flipped = false;
                 this.selectedSquare = null;
                 this.legalMoves = [];
@@ -1237,6 +1015,7 @@
                 this.evalBar = document.getElementById('evalBar');
                 this.evalValue = document.getElementById('evalValue');
                 this.evalDetails = document.getElementById('evalDetails');
+                this.apiStatus = document.getElementById('apiStatus');
                 
                 this.initEventListeners();
                 this.render();
@@ -1251,7 +1030,7 @@
                 document.getElementById('newGameBtn').addEventListener('click', () => this.newGame());
                 document.getElementById('flipBoardBtn').addEventListener('click', () => this.flipBoard());
                 document.getElementById('undoBtn').addEventListener('click', () => this.undoMove());
-                document.getElementById('analyzeBtn').addEventListener('click', () => this.analyzePosition(true));
+                document.getElementById('analyzeBtn').addEventListener('click', () => this.analyzePosition());
                 
                 this.boardElement.addEventListener('click', (e) => {
                     const square = e.target.closest('.square');
@@ -1581,61 +1360,73 @@
                 this.analyzePosition();
             }
             
-            analyzePosition(forceDeep = false) {
-                this.loadingDisplay.style.display = 'flex';
+            async analyzePosition() {
+                const fen = this.game.getFEN();
                 
-                setTimeout(() => {
-                    try {
-                        // УСИЛЕННАЯ ОЦЕНКА: глубже и точнее
-                        const score = this.engine.evaluateBoard(this.game.board);
+                this.loadingDisplay.style.display = 'flex';
+                this.apiStatus.innerHTML = 'Запрос к Lichess...';
+                this.errorDisplay.style.display = 'none';
+                
+                try {
+                    const response = await fetch(`https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(fen)}&multiPv=1`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data && data.pvs && data.pvs.length > 0) {
+                        const evalData = data.pvs[0];
+                        let score = 0;
                         
-                        // Добавляем динамику от материала
-                        let finalScore = score;
-                        
-                        // Учет активности при ходе
-                        if (this.game.currentPlayer === 'w') {
-                            finalScore += 0.1; // небольшой бонус за очередь
-                        } else {
-                            finalScore -= 0.1;
-                        }
-                        
-                        // Шкала от -3 до +3
-                        let percent = 50 + finalScore * 10;
-                        percent = Math.min(95, Math.max(5, percent));
-                        this.evalBar.style.width = percent + '%';
-                        
-                        this.evalValue.textContent = (finalScore > 0 ? '+' : '') + finalScore.toFixed(2);
-                        
-                        // Поиск лучшего хода (глубина 3 для быстроты)
-                        const bestMove = this.engine.findBestMove(this.game, forceDeep ? 4 : 3);
-                        
-                        if (bestMove) {
-                            const from = String.fromCharCode(97 + bestMove.from.col) + (8 - bestMove.from.row);
-                            const to = String.fromCharCode(97 + bestMove.to.col) + (8 - bestMove.to.row);
-                            this.evalDetails.innerHTML = `
-                                Глубина: ${forceDeep ? 4 : 3}<br>
-                                Лучший ход: ${from} → ${to} ${bestMove.promotion ? '=' + bestMove.promotion.toUpperCase() : ''}<br>
-                                Оценка: ${bestMove.score ? bestMove.score.toFixed(2) : '—'}
-                            `;
-                        } else {
-                            if (this.game.isCheckmate()) {
-                                this.evalDetails.innerHTML = `Мат. Победа ${this.game.currentPlayer === 'w' ? 'черных' : 'белых'}.`;
-                            } else if (this.game.isStalemate()) {
-                                this.evalDetails.innerHTML = `Пат. Ничья.`;
+                        if (evalData.cp !== undefined) {
+                            score = evalData.cp / 100;
+                            
+                            // Корректировка для отображения (положительное = лучше белым)
+                            this.evalValue.textContent = (score > 0 ? '+' : '') + score.toFixed(2);
+                            
+                            // Шкала от -3 до +3
+                            let percent = 50 + score * 8.33;
+                            percent = Math.min(95, Math.max(5, percent));
+                            this.evalBar.style.width = percent + '%';
+                        } else if (evalData.mate !== undefined) {
+                            if (evalData.mate > 0) {
+                                this.evalValue.innerHTML = `<span style="color: #4CAF50">Мат через ${evalData.mate}</span>`;
+                                this.evalBar.style.width = '95%';
                             } else {
-                                this.evalDetails.innerHTML = `Нет легальных ходов.`;
+                                this.evalValue.innerHTML = `<span style="color: #f44336">Мат через ${-evalData.mate}</span>`;
+                                this.evalBar.style.width = '5%';
                             }
                         }
                         
-                        this.errorDisplay.style.display = 'none';
-                    } catch (e) {
-                        console.error('Engine error:', e);
-                        this.errorDisplay.style.display = 'block';
-                        this.errorDisplay.textContent = 'Ошибка движка';
-                    } finally {
-                        this.loadingDisplay.style.display = 'none';
+                        const bestMove = evalData.moves.split(' ')[0];
+                        const from = bestMove.substring(0, 2);
+                        const to = bestMove.substring(2, 4);
+                        const promotion = bestMove.length > 4 ? bestMove[4] : '';
+                        
+                        this.evalDetails.innerHTML = `
+                            Глубина: ${data.depth || '?'}<br>
+                            Лучший ход: ${from} → ${to} ${promotion ? '=' + promotion.toUpperCase() : ''}
+                        `;
+                        
+                        this.apiStatus.innerHTML = '✅ Данные от Lichess';
+                    } else {
+                        throw new Error('Нет данных');
                     }
-                }, 10);
+                } catch (error) {
+                    console.warn('Ошибка API Lichess:', error);
+                    
+                    // Локальная заглушка
+                    this.evalBar.style.width = '50%';
+                    this.evalValue.textContent = '0.00';
+                    this.evalDetails.innerHTML = 'Глубина: локально<br>Оценка недоступна';
+                    this.apiStatus.innerHTML = '⚠️ Ошибка соединения';
+                    this.errorDisplay.style.display = 'block';
+                    this.errorDisplay.textContent = 'Не удалось получить оценку. Проверьте подключение.';
+                } finally {
+                    this.loadingDisplay.style.display = 'none';
+                }
             }
         }
         

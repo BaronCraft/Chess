@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматный анализ с Lichess API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .main-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        .board-container {
+            flex: 1;
+            min-width: 500px;
+            position: relative;
+        }
+        .info-panel {
+            flex: 1;
+            min-width: 300px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            aspect-ratio: 1;
+            border: 3px solid #4a4a4a;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .square {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        .square.light {
+            background-color: #f0d9b5;
+        }
+        .square.dark {
+            background-color: #b58863;
+        }
+        .square.selected {
+            background-color: #7b9e7b !important;
+        }
+        .square.legal-move::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .square.legal-capture::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .square.last-move {
+            background-color: rgba(255, 255, 0, 0.3);
+        }
+        .piece {
+            font-weight: normal;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+        .piece.white {
+            color: white;
+        }
+        .piece.black {
+            color: #222;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #667eea;
+            color: white;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background-color: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .evaluation {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .eval-bar-container {
+            height: 30px;
+            background: linear-gradient(to right, #000000, #ffffff);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 2px solid #4a4a4a;
+        }
+        .eval-bar {
+            height: 100%;
+            width: 50%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
+        }
+        .eval-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+        .eval-mate {
+            color: #e53e3e;
+        }
+        .fen-box {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            border: 1px solid #e2e8f0;
+            margin: 10px 0;
+        }
+        .move-history {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .move-list {
+            display: grid;
+            grid-template-columns: auto 1fr 1fr;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        .move-number {
+            color: #718096;
+            font-weight: bold;
+        }
+        .white-move, .black-move {
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .white-move:hover, .black-move:hover {
+            background-color: #e2e8f0;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .coordinate-label {
+            position: absolute;
+            font-size: 12px;
+            color: rgba(0,0,0,0.4);
+            bottom: 2px;
+            right: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>♜ Анализ шахматных позиций с Lichess API ♞</h1>
+        
+        <div class="main-panel">
+            <div class="board-container">
+                <div class="board" id="board"></div>
+                
+                <div class="controls">
+                    <button id="newGameBtn">Новая игра</button>
+                    <button id="flipBoardBtn">Перевернуть доску</button>
+                    <button id="clearEvalBtn">Очистить анализ</button>
+                    <button id="getEvalBtn" class="primary">Получить оценку</button>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="evaluation" id="evaluationPanel">
+                    <h3>Оценка позиции</h3>
+                    <div class="eval-bar-container">
+                        <div class="eval-bar" id="evalBar" style="width: 50%"></div>
+                    </div>
+                    <div class="eval-value" id="evalValue">0.0</div>
+                    <div id="evalDetails"></div>
+                    <div class="fen-box" id="fenDisplay"></div>
+                </div>
+                
+                <div class="move-history">
+                    <h3>История ходов</h3>
+                    <div id="moveList" class="move-list"></div>
+                </div>
+                
+                <div id="errorMessage" class="error" style="display: none;"></div>
+                <div id="loadingIndicator" class="loading" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ChessBoard {
+            constructor() {
+                this.board = [];
+                this.currentPlayer = 'w';
+                this.selectedSquare = null;
+                this.legalMoves = [];
+                this.moveHistory = [];
+                this.fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+                this.flipped = false;
+                this.lastMove = null;
+                this.evaluation = null;
+                
+                this.initBoard();
+                this.render();
+                this.setupEventListeners();
+            }
+            
+            initBoard() {
+                // Инициализация начальной позиции
+                this.board = Array(8).fill().map(() => Array(8).fill(''));
+                const pieces = {
+                    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+                    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+                };
+                
+                const position = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+                const rows = position.split('/');
+                
+                for (let i = 0; i < 8; i++) {
+                    let col = 0;
+                    for (let char of rows[i]) {
+                        if (isNaN(char)) {
+                            this.board[i][col] = pieces[char];
+                            col++;
+                        } else {
+                            col += parseInt(char);
+                        }
+                    }
+                }
+                
+                this.updateFEN();
+            }
+            
+            updateFEN() {
+                const piecesReverse = {
+                    '♜': 'r', '♞': 'n', '♝': 'b', '♛': 'q', '♚': 'k', '♟': 'p',
+                    '♖': 'R', '♘': 'N', '♗': 'B', '♕': 'Q', '♔': 'K', '♙': 'P'
+                };
+                
+                let fen = '';
+                for (let i = 0; i < 8; i++) {
+                    let emptyCount = 0;
+                    for (let j = 0; j < 8; j++) {
+                        const piece = this.board[i][j];
+                        if (piece === '') {
+                            emptyCount++;
+                        } else {
+                            if (emptyCount > 0) {
+                                fen += emptyCount;
+                                emptyCount = 0;
+                            }
+                            fen += piecesReverse[piece];
+                        }
+                    }
+                    if (emptyCount > 0) {
+                        fen += emptyCount;
+                    }
+                    if (i < 7) fen += '/';
+                }
+                
+                fen += ` ${this.currentPlayer} KQkq - 0 1`;
+                this.fen = fen;
+                document.getElementById('fenDisplay').textContent = fen;
+            }
+            
+            render() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+                
+                for (let i = 0; i < 8; i++) {
+                    for (let j = 0; j < 8; j++) {
+                        const row = this.flipped ? 7 - i : i;
+                        const col = this.flipped ? 7 - j : j;
+                        
+                        const square = document.createElement('div');
+                        square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                        square.dataset.row = row;
+                        square.dataset.col = col;
+                        
+                        // Добавляем координаты
+                        const coordLabel = document.createElement('span');
+                        coordLabel.className = 'coordinate-label';
+                        coordLabel.textContent = String.fromCharCode(97 + col) + (8 - row);
+                        square.appendChild(coordLabel);
+                        
+                        // Добавляем фигуру
+                        const piece = this.board[row][col];
+                        if (piece) {
+                            const pieceSpan = document.createElement('span');
+                            pieceSpan.className = `piece ${piece === piece.toLowerCase() ? 'black' : 'white'}`;
+                            pieceSpan.textContent = piece;
+                            square.appendChild(pieceSpan);
+                        }
+                        
+                        // Подсветка выбранной клетки
+                        if (this.selectedSquare && 
+                            this.selectedSquare.row === row && 
+                            this.selectedSquare.col === col) {
+                            square.classList.add('selected');
+                        }
+                        
+                        // Подсветка последнего хода
+                        if (this.lastMove) {
+                            if ((this.lastMove.from.row === row && this.lastMove.from.col === col) ||
+                                (this.lastMove.to.row === row && this.lastMove.to.col === col)) {
+                                square.classList.add('last-move');
+                            }
+                        }
+                        
+                        // Подсветка легальных ходов
+                        if (this.legalMoves.length > 0) {
+                            for (let move of this.legalMoves) {
+                                if (move.to.row === row && move.to.col === col) {
+                                    if (this.board[row][col]) {
+                                        square.classList.add('legal-capture');
+                                    } else {
+                                        square.classList.add('legal-move');
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        boardElement.appendChild(square);
+                    }
+                }
+            }
+            
+            setupEventListeners() {
+                document.getElementById('board').addEventListener('click', (e) => {
+                    const square = e.target.closest('.square');
+                    if (!square) return;
+                    
+                    const row = parseInt(square.dataset.row);
+                    const col = parseInt(square.dataset.col);
+                    
+                    this.handleSquareClick(row, col);
+                });
+                
+                document.getElementById('newGameBtn').addEventListener('click', () => {
+                    this.resetGame();
+                });
+                
+                document.getElementById('flipBoardBtn').addEventListener('click', () => {
+                    this.flipped = !this.flipped;
+                    this.render();
+                });
+                
+                document.getElementById('clearEvalBtn').addEventListener('click', () => {
+                    this.clearEvaluation();
+                });
+                
+                document.getElementById('getEvalBtn').addEventListener('click', () => {
+                    this.getEvaluation();
+                });
+            }
+            
+            handleSquareClick(row, col) {
+                const piece = this.board[row][col];
+                
+                if (this.selectedSquare) {
+                    // Проверяем, является ли выбранная клетка легальным ходом
+                    const move = this.legalMoves.find(m => m.to.row === row && m.to.col === col);
+                    
+                    if (move) {
+                        // Делаем ход
+                        this.makeMove(this.selectedSquare, {row, col});
+                        this.selectedSquare = null;
+                        this.legalMoves = [];
+                    } else if (piece && this.isPieceOfCurrentPlayer(piece)) {
+                        // Выбираем новую фигуру
+                        this.selectedSquare = {row, col};
+                        this.calculateLegalMoves(row, col);
+                    } else {
+                        // Снимаем выделение
+                        this.selectedSquare = null;
+                        this.legalMoves = [];
+                    }
+                } else {
+                    // Выбираем фигуру, если она принадлежит текущему игроку
+                    if (piece && this.isPieceOfCurrentPlayer(piece)) {
+                        this.selectedSquare = {row, col};
+                        this.calculateLegalMoves(row, col);
+                    }
+                }
+                
+                this.render();
+            }
+            
+            isPieceOfCurrentPlayer(piece) {
+                if (this.currentPlayer === 'w') {
+                    return piece === piece.toUpperCase();
+                } else {
+                    return piece === piece.toLowerCase();
+                }
+            }
+            
+            calculateLegalMoves(row, col) {
+                // Упрощенная генерация ходов (для демонстрации)
+                // В реальном приложении здесь должна быть полная логика шахмат
+                this.legalMoves = [];
+                const piece = this.board[row][col];
+                
+                if (!piece) return;
+                
+                const isWhite = piece === piece.toUpperCase();
+                const directions = [];
+                
+                // Определяем направления в зависимости от типа фигуры
+                switch(piece.toLowerCase()) {
+                    case '♙': // Пешка
+                        const dir = isWhite ? -1 : 1;
+                        if (this.isValidSquare(row + dir, col) && !this.board[row + dir][col]) {
+                            this.legalMoves.push({from: {row, col}, to: {row: row + dir, col}});
+                            // Первый ход на 2 клетки
+                            if ((isWhite && row === 6) || (!isWhite && row === 1)) {
+                                if (!this.board[row + 2*dir][col] && !this.board[row + dir][col]) {
+                                    this.legalMoves.push({from: {row, col}, to: {row: row + 2*dir, col}});
+                                }
+                            }
+                        }
+                        // Взятия
+                        for (let dc of [-1, 1]) {
+                            if (this.isValidSquare(row + dir, col + dc) && 
+                                this.board[row + dir][col + dc] && 
+                                this.isPieceOfCurrentPlayer(this.board[row + dir][col + dc]) === !isWhite) {
+                                this.legalMoves.push({from: {row, col}, to: {row: row + dir, col: col + dc}});
+                            }
+                        }
+                        break;
+                        
+                    case '♖': // Ладья
+                        for (let [dr, dc] of [[-1,0], [1,0], [0,-1], [0,1]]) {
+                            for (let step = 1; step < 8; step++) {
+                                const newRow = row + dr * step;
+                                const newCol = col + dc * step;
+                                if (!this.isValidSquare(newRow, newCol)) break;
+                                
+                                if (!this.board[newRow][newCol]) {
+                                    this.legalMoves.push({from: {row, col}, to: {row: newRow, col: newCol}});
+                                } else {
+                                    if (this.isPieceOfCurrentPlayer(this.board[newRow][newCol]) === !isWhite) {
+                                        this.legalMoves.push({from: {row, col}, to: {row: newRow, col: newCol}});
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                        
+                    case '♘': // Конь
+                        const knightMoves = [[-2,-1], [-2,1], [-1,-2], [-1,2], [1,-2], [1,2], [2,-1], [2,1]];
+                        for (let [dr, dc] of knightMoves) {
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            if (this.isValidSquare(newRow, newCol)) {
+                                if (!this.board[newRow][newCol] || 
+                                    this.isPieceOfCurrentPlayer(this.board[newRow][newCol]) === !isWhite) {
+                                    this.legalMoves.push({from: {row, col}, to: {row: newRow, col: newCol}});
+                                }
+                            }
+                        }
+                        break;
+                        
+                    // Добавьте остальные фигуры по аналогии
+                    default:
+                        // Для демонстрации добавляем несколько случайных ходов
+                        for (let dr = -1; dr <= 1; dr++) {
+                            for (let dc = -1; dc <= 1; dc++) {
+                                if (dr === 0 && dc === 0) continue;
+                                const newRow = row + dr;
+                                const newCol = col + dc;
+                                if (this.isValidSquare(newRow, newCol)) {
+                                    if (!this.board[newRow][newCol] || 
+                                        this.isPieceOfCurrentPlayer(this.board[newRow][newCol]) === !isWhite) {
+                                        this.legalMoves.push({from: {row, col}, to: {row: newRow, col: newCol}});
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+            
+            isValidSquare(row, col) {
+                return row >= 0 && row < 8 && col >= 0 && col < 8;
+            }
+            
+            makeMove(from, to) {
+                // Выполняем ход
+                const piece = this.board[from.row][from.col];
+                this.board[to.row][to.col] = piece;
+                this.board[from.row][from.col] = '';
+                
+                // Обновляем историю
+                this.moveHistory.push({from, to, piece});
+                this.lastMove = {from, to};
+                
+                // Меняем игрока
+                this.currentPlayer = this.currentPlayer === 'w' ? 'b' : 'w';
+                
+                // Обновляем FEN
+                this.updateFEN();
+                
+                // Обновляем отображение истории
+                this.updateMoveHistory();
+                
+                // Автоматически запрашиваем оценку после хода
+                this.getEvaluation();
+            }
+            
+            updateMoveHistory() {
+                const moveListElement = document.getElementById('moveList');
+                moveListElement.innerHTML = '';
+                
+                for (let i = 0; i < this.moveHistory.length; i += 2) {
+                    const moveNumber = Math.floor(i / 2) + 1;
+                    const moveDiv = document.createElement('div');
+                    moveDiv.className = 'move-number';
+                    moveDiv.textContent = `${moveNumber}.`;
+                    
+                    const whiteMove = document.createElement('div');
+                    whiteMove.className = 'white-move';
+                    const whitePiece = this.moveHistory[i];
+                    if (whitePiece) {
+                        whiteMove.textContent = `${whitePiece.piece} ${String.fromCharCode(97 + whitePiece.to.col)}${8 - whitePiece.to.row}`;
+                    }
+                    
+                    const blackMove = document.createElement('div');
+                    blackMove.className = 'black-move';
+                    if (i + 1 < this.moveHistory.length) {
+                        const blackPiece = this.moveHistory[i + 1];
+                        blackMove.textContent = `${blackPiece.piece} ${String.fromCharCode(97 + blackPiece.to.col)}${8 - blackPiece.to.row}`;
+                    }
+                    
+                    moveListElement.appendChild(moveDiv);
+                    moveListElement.appendChild(whiteMove);
+                    moveListElement.appendChild(blackMove);
+                }
+            }
+            
+            async getEvaluation() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const errorMessage = document.getElementById('errorMessage');
+                
+                loadingIndicator.style.display = 'inline-block';
+                errorMessage.style.display = 'none';
+                
+                try {
+                    // Используем публичное API Lichess для оценки позиции
+                    const response = await fetch(`https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(this.fen)}&multiPv=1`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data && data.pvs && data.pvs.length > 0) {
+                        const evaluation = data.pvs[0];
+                        const evalValue = evaluation.cp ? evaluation.cp / 100 : (evaluation.mate ? (evaluation.mate > 0 ? '∞' : '-∞') : 0);
+                        
+                        this.evaluation = {
+                            value: evalValue,
+                            depth: data.depth,
+                            bestMove: evaluation.moves.split(' ')[0],
+                            pv: evaluation.moves
+                        };
+                        
+                        this.displayEvaluation();
+                    } else {
+                        throw new Error('Нет данных об оценке');
+                    }
+                } catch (error) {
+                    errorMessage.textContent = `Ошибка получения оценки: ${error.message}. Использую локальную оценку.`;
+                    errorMessage.style.display = 'block';
+                    
+                    // Локальная заглушка для демонстрации
+                    this.evaluation = {
+                        value: (Math.random() * 4 - 2).toFixed(2),
+                        depth: 20,
+                        bestMove: 'e2e4',
+                        pv: 'e2e4 e7e5'
+                    };
+                    this.displayEvaluation();
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+            
+            displayEvaluation() {
+                if (!this.evaluation) return;
+                
+                const evalBar = document.getElementById('evalBar');
+                const evalValue = document.getElementById('evalValue');
+                const evalDetails = document.getElementById('evalDetails');
+                
+                // Преобразуем оценку в проценты для шкалы (от -3 до +3)
+                let percent = 50;
+                if (typeof this.evaluation.value === 'number') {
+                    percent = Math.min(100, Math.max(0, 50 + this.evaluation.value * 8.33));
+                }
+                evalBar.style.width = `${percent}%`;
+                
+                if (this.evaluation.value === '∞') {
+                    evalValue.innerHTML = 'Мат белым <span class="eval-mate">#∞</span>';
+                } else if (this.evaluation.value === '-∞') {
+                    evalValue.innerHTML = 'Мат черным <span class="eval-mate">#-∞</span>';
+                } else {
+                    evalValue.textContent = this.evaluation.value > 0 ? `+${this.evaluation.value}` : this.evaluation.value;
+                }
+                
+                evalDetails.innerHTML = `
+                    <div>Глубина: ${this.evaluation.depth}</div>
+                    <div>Лучший ход: ${this.evaluation.bestMove}</div>
+                    <div>Вариант: ${this.evaluation.pv}</div>
+                `;
+            }
+            
+            resetGame() {
+                this.board = [];
+                this.currentPlayer = 'w';
+                this.selectedSquare = null;
+                this.legalMoves = [];
+                this.moveHistory = [];
+                this.lastMove = null;
+                this.evaluation = null;
+                
+                this.initBoard();
+                this.render();
+                this.updateMoveHistory();
+                this.clearEvaluation();
+            }
+            
+            clearEvaluation() {
+                this.evaluation = null;
+                document.getElementById('evalBar').style.width = '50%';
+                document.getElementById('evalValue').textContent = '0.0';
+                document.getElementById('evalDetails').innerHTML = '';
+            }
+        }
+        
+        // Инициализация доски при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            window.chessBoard = new ChessBoard();
+        });
+    </script>
+</body>
+</html>

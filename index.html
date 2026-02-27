@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Шахматы с Lichess API — перетаскивание и полный анализ</title>
+    <title>Шахматы с Lichess API — проверка ходов через облако</title>
     <style>
         * {
             box-sizing: border-box;
@@ -264,11 +264,15 @@
             text-shadow: 2px 4px 8px black;
             transform: translate(-50%, -50%);
         }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>♛ <span>Lichess</span> Глубокий анализ ♚</h1>
+    <h1>♛ <span>Lichess</span> Проверка ходов через API ♚</h1>
     <div class="board-section">
         <div class="board-wrapper">
             <div class="board" id="chessboard"></div>
@@ -282,9 +286,9 @@
             </div>
 
             <div class="best-moves">
-                <h3>🔍 Лучшие продолжения (Stockfish 16+)</h3>
+                <h3>🔍 Лучшие продолжения (Lichess Cloud)</h3>
                 <div id="bestMovesList">
-                    <div class="move-row"><span>Загрузка с Lichess...</span><span></span></div>
+                    <div class="move-row"><span>Загрузка...</span><span></span></div>
                 </div>
             </div>
 
@@ -294,17 +298,17 @@
                 <button id="undoBtn">↩ Отмена</button>
             </div>
             <p style="margin: 20px 0 5px; font-size: 18px; text-align: center;">⬤ зелёный — ход, 🔴 красный — взятие</p>
-            <p style="margin: 5px 0 0; font-size: 16px; text-align: center;">✥ Перетаскивай фигуры мышкой</p>
+            <p style="margin: 5px 0 0; font-size: 16px; text-align: center;">✥ Перетаскивай или кликай — проверка через Lichess</p>
         </div>
     </div>
-    <div class="footer">движок Lichess (многовариантный) · полная мощность · drag-and-drop</div>
+    <div class="footer">Все ходы проверяются через облачный анализ Lichess · 100% легальность</div>
 </div>
 
 <script>
     (function() {
-        // --- Константы и настройки ---
+        // --- Константы ---
         const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
+        
         // --- Состояние ---
         let board = [];
         let currentTurn = 'w';
@@ -312,25 +316,21 @@
         let lastMove = null;
         let flipped = false;
         let gameHistory = [];
-
-        // --- Кэш легальных ходов для текущей позиции (UCI строки) ---
-        let legalMovesCache = new Set();
-        let currentEvalData = null;
-
-        // --- Для drag and drop ---
+        let legalMoves = new Map(); // карта "from_key" -> массив допустимых toUCI
+        let isLoading = false;
+        
+        // --- Drag and drop ---
         let isDragging = false;
         let dragStartSquare = null;
-        let dragCurrentX = 0, dragCurrentY = 0;
         let dragElement = null;
-        let draggedPiece = null;
-
+        
         // --- DOM элементы ---
         const boardEl = document.getElementById('chessboard');
         const evalDisplay = document.getElementById('evalDisplay');
         const evalBar = document.getElementById('evalBar');
         const bestMovesList = document.getElementById('bestMovesList');
         const pieceIndicator = document.getElementById('pieceIndicator');
-
+        
         // --- Утилиты ---
         function getPieceSymbol(piece) {
             if (!piece) return '';
@@ -342,16 +342,7 @@
             if (piece.color === 'w') key = key.toUpperCase();
             return symbols[key] || '';
         }
-
-        function getPieceFromSymbol(symbol) {
-            const map = {
-                '♚': 'k', '♛': 'q', '♜': 'r', '♝': 'b', '♞': 'n', '♟': 'p',
-                '♔': 'K', '♕': 'Q', '♖': 'R', '♗': 'B', '♘': 'N', '♙': 'P'
-            };
-            return map[symbol] || null;
-        }
-
-        // --- Преобразование доски в FEN ---
+        
         function boardToFen() {
             let fen = '';
             for (let r = 0; r < 8; r++) {
@@ -375,8 +366,7 @@
             }
             return fen + ' ' + currentTurn + ' KQkq - 0 1';
         }
-
-        // --- Загрузка позиции из FEN ---
+        
         function initBoardFromFen(fen) {
             const parts = fen.split(' ');
             const position = parts[0];
@@ -403,66 +393,205 @@
             }
             currentTurn = (parts[1] || 'w');
             selectedSquare = null;
-            legalMovesCache.clear();
         }
-
-        // --- Применить UCI ход к доске ---
+        
         function applyUciMove(uci) {
             if (!uci || uci.length < 4) return false;
             const fromCol = uci.charCodeAt(0) - 97;
             const fromRow = 8 - parseInt(uci[1]);
             const toCol = uci.charCodeAt(2) - 97;
             const toRow = 8 - parseInt(uci[3]);
-
+            
             if (fromRow < 0 || fromRow > 7 || fromCol < 0 || fromCol > 7 || toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
             const piece = board[fromRow][fromCol];
             if (!piece) return false;
-
-            // перемещение
+            
             board[toRow][toCol] = piece;
             board[fromRow][fromCol] = null;
-
+            
             // Превращение пешки
             if (piece.type === 'p' && (toRow === 0 || toRow === 7)) {
                 board[toRow][toCol] = { type: 'q', color: piece.color };
             }
-
+            
             lastMove = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol } };
             return true;
         }
-
+        
+        // --- Получение легальных ходов через Lichess API ---
+        async function fetchLegalMoves() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            const fen = boardToFen();
+            const url = `https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(fen)}&multiPv=10&variant=standard`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!data || !data.pvs || data.pvs.length === 0) {
+                    legalMoves.clear();
+                    updateEvalDisplay(null);
+                    return;
+                }
+                
+                // Обновляем оценку
+                updateEvalDisplay(data.pvs[0]);
+                
+                // Строим карту легальных ходов
+                const movesMap = new Map();
+                data.pvs.forEach(pv => {
+                    if (pv.moves) {
+                        const firstMove = pv.moves.split(' ')[0];
+                        if (firstMove && firstMove.length >= 4) {
+                            const from = firstMove.substring(0, 2);
+                            const to = firstMove.substring(2, 4);
+                            if (!movesMap.has(from)) {
+                                movesMap.set(from, []);
+                            }
+                            movesMap.get(from).push(to);
+                        }
+                    }
+                });
+                
+                legalMoves = movesMap;
+                
+                // Обновляем список лучших ходов
+                updateBestMovesList(data.pvs);
+                
+                // Перерисовываем доску для обновления подсветки
+                renderBoard();
+                
+            } catch (error) {
+                console.warn('Ошибка загрузки легальных ходов:', error);
+                legalMoves.clear();
+                bestMovesList.innerHTML = '<div class="move-row"><span>Ошибка соединения</span><span></span></div>';
+            } finally {
+                isLoading = false;
+            }
+        }
+        
+        function updateEvalDisplay(pv) {
+            if (!pv) {
+                evalDisplay.innerText = '—';
+                evalBar.style.width = '50%';
+                return;
+            }
+            
+            let cp = pv.cp;
+            let mate = pv.mate;
+            let evalText = '';
+            
+            if (mate !== undefined) {
+                evalText = `#${mate}`;
+            } else if (cp !== undefined) {
+                evalText = (cp / 100).toFixed(2);
+            } else {
+                evalText = '0.00';
+            }
+            evalDisplay.innerText = evalText;
+            
+            let barWidth = 50;
+            if (mate !== undefined) {
+                barWidth = mate > 0 ? 100 : 0;
+            } else if (cp !== undefined) {
+                let evalNorm = Math.max(-5, Math.min(5, cp / 100));
+                barWidth = 50 + evalNorm * 10;
+                if (barWidth < 0) barWidth = 0;
+                if (barWidth > 100) barWidth = 100;
+            }
+            evalBar.style.width = barWidth + '%';
+        }
+        
+        function updateBestMovesList(pvs) {
+            let htmlStr = '';
+            pvs.slice(0, 5).forEach((pv, idx) => {
+                const firstUci = pv.moves ? pv.moves.split(' ')[0] : '';
+                let moveStr = firstUci;
+                if (moveStr.length >= 4) {
+                    moveStr = moveStr.slice(0,2) + ' → ' + moveStr.slice(2,4);
+                }
+                let score = '';
+                if (pv.mate) score = '#' + pv.mate;
+                else if (pv.cp) score = (pv.cp/100).toFixed(2);
+                htmlStr += `<div class="move-row"><span>${moveStr}</span><span>${score}</span></div>`;
+            });
+            bestMovesList.innerHTML = htmlStr;
+        }
+        
+        // --- Проверка легальности хода ---
+        function isLegalMove(fromRow, fromCol, toRow, toCol) {
+            const fromUci = String.fromCharCode(97 + fromCol) + (8 - fromRow);
+            const toUci = String.fromCharCode(97 + toCol) + (8 - toRow);
+            
+            if (legalMoves.has(fromUci)) {
+                return legalMoves.get(fromUci).includes(toUci);
+            }
+            return false;
+        }
+        
+        // --- Выполнение хода ---
+        async function makeMove(fromRow, fromCol, toRow, toCol) {
+            if (!isLegalMove(fromRow, fromCol, toRow, toCol)) {
+                return false;
+            }
+            
+            const fromUci = String.fromCharCode(97 + fromCol) + (8 - fromRow);
+            const toUci = String.fromCharCode(97 + toCol) + (8 - toRow);
+            const moveUci = fromUci + toUci;
+            
+            // Сохраняем историю
+            const fenBefore = boardToFen();
+            gameHistory.push(fenBefore);
+            
+            // Применяем ход
+            applyUciMove(moveUci);
+            currentTurn = currentTurn === 'w' ? 'b' : 'w';
+            selectedSquare = null;
+            
+            // Перерисовываем и загружаем новые легальные ходы
+            renderBoard();
+            await fetchLegalMoves();
+            
+            return true;
+        }
+        
         // --- Отрисовка доски ---
         function renderBoard() {
             boardEl.innerHTML = '';
+            
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const row = flipped ? 7 - r : r;
                     const col = flipped ? 7 - c : c;
                     const piece = board[row][col];
                     const isLight = (row + col) % 2 === 0;
-
+                    
                     const squareDiv = document.createElement('div');
                     squareDiv.className = `square ${isLight ? 'light' : 'dark'}`;
                     squareDiv.dataset.row = row;
                     squareDiv.dataset.col = col;
-
+                    
+                    // Подсветка выбранной клетки
                     if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
                         squareDiv.classList.add('selected');
                     }
-
+                    
+                    // Подсветка последнего хода
                     if (lastMove) {
                         if ((lastMove.from.row === row && lastMove.from.col === col) ||
                             (lastMove.to.row === row && lastMove.to.col === col)) {
                             squareDiv.classList.add('last-move');
                         }
                     }
-
-                    // Подсветка возможных ходов
+                    
+                    // Подсветка возможных ходов для выбранной фигуры
                     if (selectedSquare && !(selectedSquare.row === row && selectedSquare.col === col)) {
                         const fromUci = String.fromCharCode(97 + selectedSquare.col) + (8 - selectedSquare.row);
                         const toUci = String.fromCharCode(97 + col) + (8 - row);
-                        const moveUci = fromUci + toUci;
-                        if (legalMovesCache.has(moveUci)) {
+                        
+                        if (legalMoves.has(fromUci) && legalMoves.get(fromUci).includes(toUci)) {
                             if (board[row][col] !== null) {
                                 squareDiv.classList.add('possible-capture');
                             } else {
@@ -470,97 +599,109 @@
                             }
                         }
                     }
-
+                    
                     if (piece) {
                         squareDiv.textContent = getPieceSymbol(piece);
                     }
-
-                    // События мыши для drag & drop
+                    
+                    // События
                     squareDiv.addEventListener('mousedown', onMouseDown);
-                    squareDiv.addEventListener('mouseenter', onMouseEnter);
-                    squareDiv.addEventListener('mouseleave', onMouseLeave);
-
+                    squareDiv.addEventListener('click', onClick);
+                    
                     boardEl.appendChild(squareDiv);
                 }
             }
-
+            
             pieceIndicator.innerHTML = currentTurn === 'w' ? '♔ Ход белых' : '♚ Ход чёрных';
         }
-
-        // --- Drag and Drop функции ---
+        
+        // --- Обработка клика ---
+        async function onClick(e) {
+            if (isLoading) return;
+            
+            const row = parseInt(e.currentTarget.dataset.row);
+            const col = parseInt(e.currentTarget.dataset.col);
+            const piece = board[row][col];
+            
+            // Если ничего не выбрано
+            if (selectedSquare === null) {
+                if (piece && piece.color === currentTurn) {
+                    selectedSquare = { row, col };
+                    renderBoard();
+                }
+                return;
+            }
+            
+            // Уже есть выбранная фигура
+            const from = selectedSquare;
+            
+            // Клик на ту же клетку
+            if (from.row === row && from.col === col) {
+                selectedSquare = null;
+                renderBoard();
+                return;
+            }
+            
+            // Попытка сделать ход
+            const success = await makeMove(from.row, from.col, row, col);
+            if (!success) {
+                selectedSquare = null;
+                renderBoard();
+            }
+        }
+        
+        // --- Drag and drop ---
         function onMouseDown(e) {
+            if (isLoading) return;
+            
             const square = e.currentTarget;
             const row = parseInt(square.dataset.row);
             const col = parseInt(square.dataset.col);
             const piece = board[row][col];
-
+            
             if (!piece || piece.color !== currentTurn) return;
-
+            
             e.preventDefault();
             isDragging = true;
             dragStartSquare = { row, col };
-            draggedPiece = piece;
-
+            
             // Создаём элемент для перетаскивания
             dragElement = document.createElement('div');
             dragElement.className = 'dragging-piece';
             dragElement.textContent = getPieceSymbol(piece);
             document.body.appendChild(dragElement);
-
-            // Обновляем позицию
+            
             updateDragPosition(e.clientX, e.clientY);
-
-            // Добавляем обработчики
+            
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
-
-            // Подсвечиваем возможные ходы
+            
+            // Подсвечиваем выбранную фигуру
             selectedSquare = { row, col };
             renderBoard();
         }
-
+        
         function onMouseMove(e) {
             if (!isDragging) return;
             e.preventDefault();
             updateDragPosition(e.clientX, e.clientY);
         }
-
-        function onMouseUp(e) {
-            if (!isDragging) return;
-
+        
+        async function onMouseUp(e) {
+            if (!isDragging || !dragStartSquare) return;
+            
             const targetElement = document.elementFromPoint(e.clientX, e.clientY);
             const targetSquare = targetElement?.closest('.square');
-
+            
             if (targetSquare && dragStartSquare) {
                 const toRow = parseInt(targetSquare.dataset.row);
                 const toCol = parseInt(targetSquare.dataset.col);
                 const fromRow = dragStartSquare.row;
                 const fromCol = dragStartSquare.col;
-
-                const fromUci = String.fromCharCode(97 + fromCol) + (8 - fromRow);
-                const toUci = String.fromCharCode(97 + toCol) + (8 - toRow);
-                const moveUci = fromUci + toUci;
-
-                if (legalMovesCache.has(moveUci)) {
-                    // Легальный ход
-                    const fenBefore = boardToFen();
-                    gameHistory.push(fenBefore);
-                    applyUciMove(moveUci);
-                    currentTurn = currentTurn === 'w' ? 'b' : 'w';
-                    selectedSquare = null;
-                    legalMovesCache.clear();
-                    renderBoard();
-                    fetchFullAnalysis();
-                } else {
-                    // Нелегальный ход
-                    selectedSquare = null;
-                    renderBoard();
-                }
-            } else {
-                selectedSquare = null;
-                renderBoard();
+                
+                await makeMove(fromRow, fromCol, toRow, toCol);
             }
-
+            
             // Очистка
             if (dragElement) {
                 dragElement.remove();
@@ -568,121 +709,33 @@
             }
             isDragging = false;
             dragStartSquare = null;
-            draggedPiece = null;
-
+            selectedSquare = null;
+            
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
+            
+            renderBoard();
         }
-
+        
         function updateDragPosition(x, y) {
             if (dragElement) {
                 dragElement.style.left = x + 'px';
                 dragElement.style.top = y + 'px';
             }
         }
-
-        function onMouseEnter(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-        }
-
-        function onMouseLeave(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-        }
-
-        // --- Получение всех легальных ходов и анализа с Lichess ---
-        function fetchFullAnalysis() {
-            const fen = boardToFen();
-            const url = `https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(fen)}&multiPv=10&variant=standard`;
-
-            fetch(url)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data || !data.pvs || data.pvs.length === 0) {
-                        evalDisplay.innerText = '—';
-                        bestMovesList.innerHTML = '<div class="move-row"><span>Нет вариантов</span><span></span></div>';
-                        evalBar.style.width = '50%';
-                        legalMovesCache.clear();
-                        renderBoard();
-                        return;
-                    }
-
-                    currentEvalData = data;
-
-                    // Собираем все легальные ходы
-                    const movesSet = new Set();
-                    data.pvs.forEach(pv => {
-                        if (pv.moves) {
-                            const firstMove = pv.moves.split(' ')[0];
-                            if (firstMove && firstMove.length >= 4) movesSet.add(firstMove);
-                        }
-                    });
-
-                    legalMovesCache = movesSet;
-
-                    // Обновляем оценку
-                    const pv0 = data.pvs[0];
-                    let cp = pv0.cp;
-                    let mate = pv0.mate;
-                    let evalText = '';
-                    if (mate !== undefined) {
-                        evalText = `#${mate}`;
-                    } else if (cp !== undefined) {
-                        evalText = (cp / 100).toFixed(2);
-                    } else {
-                        evalText = '0.00';
-                    }
-                    evalDisplay.innerText = evalText;
-
-                    // Bar
-                    let barWidth = 50;
-                    if (mate !== undefined) {
-                        barWidth = mate > 0 ? 100 : 0;
-                    } else if (cp !== undefined) {
-                        let evalNorm = Math.max(-5, Math.min(5, cp / 100));
-                        barWidth = 50 + evalNorm * 10;
-                        if (barWidth < 0) barWidth = 0;
-                        if (barWidth > 100) barWidth = 100;
-                    }
-                    evalBar.style.width = barWidth + '%';
-
-                    // Формируем список лучших ходов
-                    let htmlStr = '';
-                    data.pvs.slice(0, 5).forEach((pv, idx) => {
-                        const firstUci = pv.moves ? pv.moves.split(' ')[0] : '';
-                        let moveStr = firstUci;
-                        if (moveStr.length >= 4) {
-                            moveStr = moveStr.slice(0,2) + ' → ' + moveStr.slice(2,4);
-                        }
-                        let score = '';
-                        if (pv.mate) score = '#' + pv.mate;
-                        else if (pv.cp) score = (pv.cp/100).toFixed(2);
-                        htmlStr += `<div class="move-row"><span>${moveStr}</span><span>${score}</span></div>`;
-                    });
-                    bestMovesList.innerHTML = htmlStr;
-
-                    renderBoard();
-                })
-                .catch(err => {
-                    console.warn('Ошибка загрузки анализа', err);
-                    bestMovesList.innerHTML = '<div class="move-row"><span>Ошибка соединения</span><span></span></div>';
-                });
-        }
-
-        // --- Новая игра ---
+        
+        // --- Управление игрой ---
         function newGame() {
             initBoardFromFen(startFen);
             lastMove = null;
             gameHistory = [];
             selectedSquare = null;
-            legalMovesCache.clear();
+            legalMoves.clear();
             renderBoard();
-            fetchFullAnalysis();
+            fetchLegalMoves();
         }
-
-        // --- Отмена хода ---
-        function undoMove() {
+        
+        async function undoMove() {
             if (gameHistory.length === 0) {
                 alert('Нет ходов для отмены');
                 return;
@@ -691,27 +744,25 @@
             initBoardFromFen(prevFen);
             lastMove = null;
             selectedSquare = null;
-            legalMovesCache.clear();
             renderBoard();
-            fetchFullAnalysis();
+            await fetchLegalMoves();
         }
-
-        // --- Переворот ---
+        
         function flipBoard() {
             flipped = !flipped;
             renderBoard();
         }
-
+        
         // --- Инициализация ---
         initBoardFromFen(startFen);
         renderBoard();
-        fetchFullAnalysis();
-
+        fetchLegalMoves();
+        
         // Кнопки
         document.getElementById('newGameBtn').addEventListener('click', newGame);
         document.getElementById('flipBtn').addEventListener('click', flipBoard);
         document.getElementById('undoBtn').addEventListener('click', undoMove);
-
+        
         // Предотвращаем стандартный drag
         document.addEventListener('dragstart', (e) => e.preventDefault());
     })();
